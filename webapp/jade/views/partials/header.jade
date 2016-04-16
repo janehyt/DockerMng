@@ -1,0 +1,50 @@
+//- navbar header
+.navbar-header(ng-class="app.settings.navbarHeaderColor")
+	button.pull-right.visible-xs.dk(ui-toggle-class="show",data-target=".navbar-collapse")
+		i.glyphicon.glyphicon-cog
+	button.pull-right.visible-xs(ui-toggle-class="off-screen",data-target=".app-aside")
+		i.glyphicon.glyphicon-align-justify
+	a.navbar-brand.text-lt(href="#/")
+		i.fa.fa-btc
+		img.hide(src="app/img/logo.png",alt="logo")
+		span.hidden-folded.m-l-xs {{app.name}}
+
+.collapse.pos-rlt.navbar-collapse.box-shadow(ng-class="app.settings.navbarCollapseColor")
+	.nav.navbar-nav.hidden-xs
+		a.btn.no-shadow.navbar-btn(ng-click="app.settings.asideFolded = !app.settings.asideFolded")
+			i.fa.fa-fw(ng-class="app.settings.asideFolded ? 'fa-indent' : 'fa-dedent'")
+
+	form.navbar-form.navbar-form-sm.navbar-left.shift(ui-shift="prependTo",target=".navbar-collapse",role="search",ng-controller="TypeaheadDemoCtrl")
+		.form-group
+			.input-group
+				input.form-control.input-sm.bg-light.noborder.rounded.padder(type="text",ng-model="selected",typeahead="state for state in states | filter:$viewValue | limitTo:8",placeholder="search...")
+				span.input-group-btn
+					button.btn.btn-sm.bg-light.rounded
+						i.fa.fa-search
+
+	ul.nav.navbar-nav.navbar-right
+		li.dropdown.hidden-xs(is-open="lang.isopen",dropdown="")
+			a.dropdown-toggle(dropdown-toggle="") {{selectLang}}
+				b.caret
+			ul.dropdown-menu.animated.fadeInright.w
+				li(ng-repeat="(langKey,label) in langs")
+					a(ng-click="setLang(langKey,$event)") {{label}}
+		li.hidden-xs
+			a(ui-fullscreen="")
+		li.dropdown(dropdown="",ng-controller="UserCtrl")
+			a.dropdown-toggle.clear(dropdown-toggle="")
+				span.thumb-sm.avatar.pull-right.m-t-n-sm.m-b-n-sm.m-l-sm
+					img(src="app/img/a0.jpg",alt="avatar")
+				span.hidden-sm.hidden-md {{user.name}}
+				.caret
+			ul.dropdown-menu.animated.fadeInRight.w
+				li.wrapper.b-b.m-b-sm.bg-light.m-t-n-xs
+					div
+						p {{user.name}}
+				li
+					a(ui-sref="app.settings")
+						span(translate="aside.nav.SETTINGS") Settings
+				li.divider
+				li
+					a(ng-click="logout()")
+						span(translate="aside.nav.LOGOUT") Logout

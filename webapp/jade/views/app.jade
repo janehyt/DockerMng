@@ -1,0 +1,24 @@
+// top navbar
+header.app-header.navbar(ng-include="'app/views/partials/header.html'")
+
+// sidebar
+aside.app-aside.hidden-xs(ng-include="'app/views/partials/aside.html'",ng-class="app.settings.asideColor")
+
+
+// Main section
+section.app-content
+	div(ui-butterbar="")
+	// Page content
+	a.off-screen-toggle.hide(href="",ui-toggle-class="off-screen",data-target=".app-aside")
+	.app-content-body.fade-in-up(ui-view="")
+// Page footer
+footer.app-footer.wrapper.b-t.bg-light
+	span.pull-right
+		| {{app.version}}
+		a.m-l-sm.text-muted(href="",ui-scroll="app")
+		i.fa.fa-long-arrow-up
+	| &copy; 2016 Copyright.
+
+
+.settings.panel.panel-default(ng-include="'app/views/partials/settings.html'")
+

@@ -1,0 +1,21 @@
+ul.nav(ng-controller="NavCtrl")
+	li.hidden-folded.padder.m-t.m-b-sm.text-muted.text-xs
+		span(translate="aside.nav.HEADER") Navigation
+	li(ng-repeat="nav in navs",ui-sref-active="{{nav.has_sub?'':'active'}}")
+		a(ng-if="nav.sref",ui-sref="{{nav.sref}}")
+			i.glyphicon.icon(ng-class="nav.icon")
+			span.font-bold {{nav.name}}
+		a.auto(ng-if="!nav.sref")
+			span.pull-right.text-muted
+				i.fa.fa-fw.fa-angle-right.text
+				i.fa.fa-fw.fa-angle-down.text-active
+			i.glyphicon.icon(ng-class="nav.icon")
+			span.font-bold {{nav.name}}
+		ul.nav.nav-sub.dk(ng-if="!nav.sref")
+			li.nav-sub-header
+				a(href="")
+					span {{nav.name}}
+			li(ng-repeat="menu in nav.sub_menus" ui-sref-active="active")
+				a(ui-sref="{{menu.sref}}")
+					span {{nav.name}}
+

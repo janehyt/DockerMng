@@ -1,0 +1,10 @@
+doctype html
+html(lang="en", data-ng-app="app")
+  
+	head
+		include views/partials/head
+  
+	body(ng-controller="AppCtrl")
+		.app#app(ng-class="{'app-header-fixed':app.settings.headerFixed, 'app-aside-fixed':app.settings.asideFixed, 'app-aside-folded':app.settings.asideFolded, 'app-aside-dock':app.settings.asideDock, 'container':app.settings.container}",data-ui-view="")
+
+		include views/partials/scripts

@@ -30,11 +30,14 @@ urlpatterns = [
     url(r'^$',serve, 
         {'document_root': settings.DIST_PATH,
         'path':'index.html'}),
+    url(r'^index.html$',serve, 
+        {'document_root': settings.DIST_PATH,
+        'path':'index.html'}),
 	url(r'^api/', include(router.urls)),
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
-    url(r'^(?P<path>(?:js|css|img|fonts|img|l10n|tpl|vendor)/.*)$', serve,{'document_root': settings.DIST_PATH}),
+    url(r'^app(?P<path>/.*)$', serve,{'document_root': settings.APP_PATH}),
 ]
 
 def page_not_found(request):

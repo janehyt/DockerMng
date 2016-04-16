@@ -137,12 +137,6 @@ REST_FRAMEWORK = {
 }
 
 DIST_PATH = os.path.join(BASE_DIR, 'dist')
-CSS_PATH = os.path.join(DIST_PATH, 'css')
-FONTS_PATH = os.path.join(DIST_PATH, 'fonts')
-IMG_PATH = os.path.join(DIST_PATH,'img')
-JS_PATH = os.path.join(DIST_PATH,'js')
-L10N_PATH = os.path.join(DIST_PATH,'l10n')
-TPL_PATH = os.path.join(DIST_PATH,'tpl')
-VENDOR_PATH = os.path.join(DIST_PATH,'vendor')
+APP_PATH = os.path.join(DIST_PATH, 'app')
 
 STATIC_ROOT = os.path.join(BASE_DIR,'dist')

@@ -76,9 +76,13 @@ var ignored_files = '!'+hidden_files;
 // SOURCES CONFIG 
 var source = {
   scripts: {
-    app:    [ 'vendor/jquery/jquery.js',
+    base: [
+              'vendor/jquery/jquery.js',
               'vendor/angular/angular.js',
               'vendor/angular/**/*.js',
+
+    ],
+    app:    [ 
               'js/*.js',
               'js/**/*.js',
             ],
@@ -127,7 +131,8 @@ var source = {
 var dist = {
   watch: ['../mysite/dist/**','../mysite/dist/app/**'],
   scripts: {
-    main: 'app.js',
+    base: 'base.js',
+    app: 'app.js',
     dir: '../mysite/dist/app/js'
   },
   templates: {
@@ -195,13 +200,30 @@ gulp.task('copy',['copy:img','copy:fonts','copy:lang','copy:vendor'])
 // TASKS
 //---------------
 
+// JS APP
+gulp.task('scripts:base', function() {
+    // Minify and copy all JavaScript (except vendor scripts)
+    return gulp.src(source.scripts.base)
+        .pipe( useSourceMaps ? sourcemaps.init() : gutil.noop())
+        .pipe(concat(dist.scripts.base))
+        .pipe(ngAnnotate())
+
+        .on("error", handleError)
+        .pipe(gulp.dest(dist.scripts.dir))
+        // .on("error", handleError)
+        .pipe( useSourceMaps ? sourcemaps.write() : gutil.noop() )
+        .pipe(rename({suffix: '.min'}))
+        .pipe(uglify())
+        .pipe(gulp.dest(dist.scripts.dir))
+        // .pipe(gulp.dest(build.scripts.app.server_dir));
+});
 
 // JS APP
 gulp.task('scripts:app', function() {
     // Minify and copy all JavaScript (except vendor scripts)
     return gulp.src(source.scripts.app)
         .pipe( useSourceMaps ? sourcemaps.init() : gutil.noop())
-        .pipe(concat(dist.scripts.main))
+        .pipe(concat(dist.scripts.app))
         .pipe(ngAnnotate())
 
         .on("error", handleError)
@@ -308,6 +330,7 @@ gulp.task('usesources', function(){ useSourceMaps = true; });
 // default (no minify)
 gulp.task('default', gulpsync.sync([
           // 'vendor',
+          "scripts:base",
           'scripts:app',
           'styles:app',
           'styles:min',

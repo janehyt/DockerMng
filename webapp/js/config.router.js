@@ -32,6 +32,20 @@ angular.module('app')
                   url: '/settings',
                   templateUrl: 'app/views/settings.html'
               })
+
+              // other pages
+              .state('page', {
+                  url: '/page',
+                  template: '<div ui-view class="fade-in-right-big smooth"></div>'
+              })
+              .state('page.signin',{
+                  url: '/signin',
+                  templateUrl: 'app/views/signin.html'
+              })
+              .state('page.signup',{
+                  url: '/signup',
+                  templateUrl: 'app/views/signup.html'
+              })
               
       }
     ]

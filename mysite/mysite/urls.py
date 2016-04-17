@@ -33,7 +33,7 @@ urlpatterns = [
     url(r'^index.html$',serve, 
         {'document_root': settings.DIST_PATH,
         'path':'index.html'}),
-	url(r'^api/', include(router.urls)),
+    url(r'^api/', include(router.urls)),
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 

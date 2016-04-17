@@ -106,7 +106,7 @@ var source = {
     },
     views: {
         files : ['jade/views/*.jade', 'jade/views/**/*.jade', ignored_files],
-        watch: ['jade/views/**/*.jade']
+        watch: ['jade/views/**/*.jade','jade/views/*.jade']
     }
   },
   img: {

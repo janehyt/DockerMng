@@ -14,16 +14,30 @@ angular.module('app')
             // console.info("rootscope");
             $http.get("api/users/get_user")
             .then(function(response){
-              $state.go("app.dashboard");
+              if($state.current.name.indexOf('app.')==0){}
+                
+              else{
+                $state.go("app.dashboard");
+              }
               $rootScope.user=response.data;
             },function(x){
               console.info(x);
-              if($state.current.name.indexOf('page.')!=0)
+              if($state.current.name.indexOf('page.')==0){}
+
+              else{
                 $state.go("page.signin");
+              }
               // TODO 不同错误码解决方法
             })
           }
-          $rootScope.getUser();
+
+          $rootScope.$on("$stateChangeSuccess", function(event, next, current) {
+              console.info("state change");
+              // console.info($state.current);
+              $rootScope.getUser();
+          });
+
+          // $rootScope.getUser();
 
           $rootScope.logout = function(){
             console.log("root logout");

@@ -1,8 +1,5 @@
 app.controller("SigninCtrl",['$scope',"$http","$state","$resource","$rootScope",
 	function($scope,$http,$state,$resource,$rootScope){
-		if($rootScope.user.username){
-			$state.go("app.dashboard");
-		}
 
 		$scope.user = {};
 		$scope.authError = null;
@@ -19,7 +16,7 @@ app.controller("SigninCtrl",['$scope',"$http","$state","$resource","$rootScope",
 					$state.go("app.dashboard");
 				}
 			},function(x){
-				if(x.data.detail.indexOf("CSRF")!=-1){
+				if(x.data.detail&&x.data.detail.indexOf("CSRF")!=-1){
 					$scope.authError = "您可能已经登陆，请刷新页面"
 				}else{
 					console.info(x);

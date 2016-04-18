@@ -5,10 +5,37 @@
  */
 angular.module('app')
   .run(
-    [          '$rootScope', '$state', '$stateParams',
-      function ($rootScope,   $state,   $stateParams) {
+    [          '$rootScope', '$state', '$stateParams','$http',
+      function ($rootScope,   $state,   $stateParams, $http) {
           $rootScope.$state = $state;
-          $rootScope.$stateParams = $stateParams;        
+          $rootScope.$stateParams = $stateParams;
+          $rootScope.user = {};
+          $rootScope.getUser = function(){
+            // console.info("rootscope");
+            $http.get("api/users/get_user")
+            .then(function(response){
+              $state.go("app.dashboard");
+              $rootScope.user=response.data;
+            },function(x){
+              console.info(x);
+              if($state.current.name.indexOf('page.')!=0)
+                $state.go("page.signin");
+              // TODO 不同错误码解决方法
+            })
+          }
+          $rootScope.getUser();
+
+          $rootScope.logout = function(){
+            console.log("root logout");
+            $http.get("api/users/log_out")
+            .then(function(response){
+              $rootScope.user = {}
+              $state.go("page.signin");
+            },function(x){
+              location.reload()
+            })
+          }
+
       }
     ]
   )

@@ -36,7 +36,6 @@ angular.module('app')
 
     var csrftoken = getCookie('csrftoken');
     
-
     $httpProvider.defaults.headers.post['X-CSRFToken'] = csrftoken;
     $httpProvider.defaults.headers.put['X-CSRFToken'] = csrftoken;
   }])

@@ -31,20 +31,20 @@
 					a(ng-click="setLang(langKey,$event)") {{label}}
 		li.hidden-xs
 			a(ui-fullscreen="")
-		li.dropdown(dropdown="",ng-controller="UserCtrl")
+		li.dropdown(dropdown="")
 			a.dropdown-toggle.clear(dropdown-toggle="")
 				span.thumb-sm.avatar.pull-right.m-t-n-sm.m-b-n-sm.m-l-sm
 					img(src="app/img/a0.jpg",alt="avatar")
-				span.hidden-sm.hidden-md {{user.name}}
+				span.hidden-sm.hidden-md {{$root.user.username}}
 				.caret
 			ul.dropdown-menu.animated.fadeInRight.w
 				li.wrapper.b-b.m-b-sm.bg-light.m-t-n-xs
 					div
-						p {{user.name}}
+						p {{$root.user.username}}
 				li
 					a(ui-sref="app.settings")
 						span(translate="aside.nav.SETTINGS") Settings
 				li.divider
 				li
-					a(ng-click="logout()")
+					a(ng-click="$root.logout()")
 						span(translate="aside.nav.LOGOUT") Logout

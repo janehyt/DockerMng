@@ -14,7 +14,7 @@
 				.list-group-item
 					input.form-control.no-border(type="password",placeholder="Password",ng-model="user.password",required="",name="password")
 				.list-group-item
-					input.form-control.no-border(type="confirm",placeholder="Confirm",ng-model="user.confirm",required="",ui-validate="'$value==user.password'",ui-validate-watch="'user.password'",name="confirm")
+					input.form-control.no-border(type="password",placeholder="Confirm",ng-model="confirm",required="",ui-validate="'$value==user.password'",ui-validate-watch="'user.password'",name="confirm")
 			button.btn.btn-lg.btn-primary.btn-block(ng-click="signup()",ng-disabled="SignupForm.$invalid") Sing up
 			.line.line-dashed
 			p.text-center

@@ -21,6 +21,12 @@ app.controller('NavCtrl',['$scope',function($scope){
 
 		},
 		{
+			name: "Applications",
+			translate: "aside.nav.APPLICATIONS",
+			icon: " glyphicon-th-large text-warning-dker",
+			sref: "app.applications"
+		},
+		{
 			name: "Settings",
 			translate: "aside.nav.SETTINGS",
 			icon: "glyphicon-cog text-info-dker",

@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
 
@@ -23,11 +23,3 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             instance.set_password(validated_data['password'])
         instance.save()
         return instance
-
-
-
-
-class GroupSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Group
-        fields = ('url', 'name')

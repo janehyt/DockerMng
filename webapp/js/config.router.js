@@ -73,6 +73,10 @@ angular.module('app')
                   url: '/settings',
                   templateUrl: 'app/views/settings.html'
               })
+              .state('app.applications',{
+                url: '/applications',
+                templateUrl: 'app/views/applications.html'
+              })
 
               // other pages
               .state('page', {

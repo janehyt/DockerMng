@@ -4,7 +4,8 @@
 	    "HEADER" : "Navigation",
 	    "DASHBOARD" : "Dashboard",
 	    "SETTINGS": "Settings",
-	    "LOGOUT": "Logout"
+	    "LOGOUT": "Logout",
+	    "APPLICATIONS": "Applications"
 	  }
 	}
 

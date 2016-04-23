@@ -24,7 +24,6 @@ from django.http import HttpResponseRedirect as HttpResponseRedirect
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
-router.register(r'groups', views.GroupViewSet)
 
 urlpatterns = [
     url(r'^$',serve, 

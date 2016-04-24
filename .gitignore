@@ -1,5 +1,5 @@
 /webapp/bower_components
 /webapp/node_modules
 /mysite/dist
-/mysite/pyenv
+/mysite/py_env
 __pycache__

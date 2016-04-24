@@ -82,9 +82,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'mysite_db',
         'USER': 'root',
-        'PASSWORD': '123456',
-        'HOST': '',
-        'PORT': '',
+        'PASSWORD': 'root',
+        'HOST': '192.168.31.100',
+        'PORT': '3306',
         'OPTIONS': {
             'autocommit': True,
         },

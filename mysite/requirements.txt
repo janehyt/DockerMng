@@ -1,5 +1,11 @@
+backports.ssl-match-hostname==3.5.0.1
 Django==1.9.5
 django-filter==0.13.0
 djangorestframework==3.3.3
+docker-py==1.8.0
 Markdown==2.6.6
+py2-ipaddress==3.4.1
 PyMySQL==0.7.2
+requests==2.9.1
+six==1.10.0
+websocket-client==0.37.0

@@ -302,8 +302,8 @@ gulp.task('watch', function() {
   gulp.watch(source.templates.app.watch,      ['templates:app']);
   gulp.watch(source.styles.watch.less,        ['styles:app']);
   gulp.watch(source.styles.watch.css,         ['styles:min']);
-  gulp.watch(source.img.files,                ['copy:img']);
-  gulp.watch(source.fonts.files,              ['copy:fonts']);
+  // gulp.watch(source.img.files,                ['copy:img']);
+  // gulp.watch(source.fonts.files,              ['copy:fonts']);
   gulp.watch(source.lang.files,               ['copy:lang']);
   gulp.watch(dist.watch).on('change', function(event) {
 

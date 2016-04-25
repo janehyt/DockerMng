@@ -24,6 +24,7 @@ from django.http import HttpResponseRedirect as HttpResponseRedirect
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
+# router.register(r'docker', views.DockerViewSet)
 
 urlpatterns = [
     url(r'^$',serve, 

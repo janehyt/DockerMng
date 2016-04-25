@@ -1,15 +1,20 @@
 # -*- coding: UTF-8 -*- 
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 
 # Create your views here.
 from django.contrib.auth.models import User
 from rest_framework import viewsets
-from api.serializers import UserSerializer
+from api.serializers import UserSerializer,ContainerSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes,detail_route,list_route
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from django.contrib import auth
-from api.docker_related import DockerService
+from api.docker_client import DockerClient
+from .models import Container
+import time
+from docker import errors
+
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -70,3 +75,42 @@ class UserViewSet(viewsets.ModelViewSet):
     # @permission_classes(IsAuthenticated)
     # def list(self,request):
     #     pass
+class ContainerViewSet(viewsets.ModelViewSet):
+
+    queryset = Container.objects.all().order_by('-created')
+    serializer_class = ContainerSerializer
+
+    def list(self, request):
+        # cli = DockerClient().getClient()
+        # containers = cli.containers(all=1)
+        queryset = Container.objects.filter(user=request.user)
+        serializer = ContainerSerializer(queryset,many=True)
+        containers = serializer.data
+        cli = DockerClient().getClient()
+        for container in containers:
+            try:
+                c = cli.inspect_container(container["name"])["State"]
+            except errors.NotFound:
+                container["state"] = {"Status":"ghost"}
+            else:
+                print container["name"]
+                container["state"] = c
+
+        # for container in queryset:
+        #     print(container)
+        return Response(containers)
+
+    def retrieve(self, request, pk=None):
+        # queryset = Container.objects.all()
+        data = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        try:
+            container = cli.inspect_container(data.name)
+        except errors.NotFound:
+            return Response({"detail":"Not found."},status=404)
+        else:    
+            return Response(container)
+
+    def perform_create(self, serializer):
+        print(self.request.data)
+        serializer.save(user=self.request.user)

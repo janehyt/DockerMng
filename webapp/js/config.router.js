@@ -32,7 +32,7 @@ angular.module('app')
           }
 
           $rootScope.$on("$stateChangeSuccess", function(event, next, current) {
-              console.info("state change");
+              // console.info("state change");
               // console.info($state.current);
               $rootScope.getUser();
           });
@@ -75,9 +75,20 @@ angular.module('app')
               })
               .state('app.applications',{
                 url: '/applications',
-                templateUrl: 'app/views/applications.html'
+                template: '<div ui-view class="fade-in-up"></div>'
               })
-
+              .state('app.applications.list', {
+                  url: '/list',
+                  templateUrl: 'app/views/applications_list.html'
+              })
+              .state('app.applications.detail', {
+                  url: '/detail',
+                  templateUrl: 'app/views/applications_detail.html'
+              })
+              .state('app.applications.create', {
+                  url: '/create',
+                  templateUrl: 'app/views/applications_create.html'
+              })
               // other pages
               .state('page', {
                   url: '/page',

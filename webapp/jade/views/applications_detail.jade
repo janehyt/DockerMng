@@ -1,0 +1,41 @@
+div(ng-controller="ApplicationsCtrl")
+	.bg-light.lter.b-b.wrapper-md
+		h1.m-n.font-thin.h3 {{title}}
+	.wrapper-md
+		.panel.panel-default
+			.panel-heading 应用详情
+			.row.wrapper
+				.col-sm-5.m-b-xs
+					button.btn.btn-sm.btn-default 创建应用
+				.col-sm-4
+				.col-sm-3
+					.input-group
+						input.input-sm.form-control(type="text",placeholder="search by name")
+						span.input-group-btn
+							button.btn.btn-sm.btn-default(type="button") 搜索
+			.tanle-responsive
+				table.table.table-striped.b-t.b-light
+					thead
+						tr
+							th(style="width:20px;")
+								label.i-checks.m-b-none
+									input(type="checkbox")
+									i
+							th 名称
+							th 创建时间
+							th 更新时间
+							th 状态
+							th 操作
+					tbody
+						tr(ng-repeat="item in containers")
+							td
+								label.i-checks.m-b-none
+									input(type="checkbox",name="post[]")
+									i
+							td {{item.name}}
+							td {{item.created}}
+							td {{item.updated}}
+							td
+								span.label(ng-class="stateClass(item.state.Status)") {{item.state.Status}}
+							td
+								button.btn.btn-sm.btn-default(type="button",ng-hide="item.state.Status=='ghost'") 查看详情		

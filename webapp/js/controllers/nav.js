@@ -24,7 +24,24 @@ app.controller('NavCtrl',['$scope',function($scope){
 			name: "Applications",
 			translate: "aside.nav.APPLICATIONS",
 			icon: " glyphicon-th-large text-warning-dker",
-			sref: "app.applications"
+			include:"app.applications",
+			sub_menus: [
+				{
+					name: "应用列表",
+					sref: "app.applications.list",
+					translate:""
+				},
+				{
+					name: "应用详情",
+					sref: "app.applications.detail",
+					translate:""
+				},
+				{
+					name: "应用创建",
+					sref: "app.applications.create",
+					translate:""
+				}
+			]
 		},
 		{
 			name: "Settings",

@@ -3,3 +3,4 @@
 /mysite/dist
 /mysite/py_env
 __pycache__
+*.pyc

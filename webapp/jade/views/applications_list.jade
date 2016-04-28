@@ -1,4 +1,4 @@
-div(ng-controller="ApplicationsCtrl")
+div(ng-controller="ApplicationsListCtrl")
 	.bg-light.lter.b-b.wrapper-md
 		h1.m-n.font-thin.h3 {{title}}
 	.wrapper-md
@@ -27,7 +27,7 @@ div(ng-controller="ApplicationsCtrl")
 							th 状态
 							th 操作
 					tbody
-						tr(ng-repeat="item in containers")
+						tr(ng-repeat="item in containers.results")
 							td
 								label.i-checks.m-b-none
 									input(type="checkbox",name="post[]")

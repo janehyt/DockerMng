@@ -1,0 +1,33 @@
+div(ng-controller="ImagesListCtrl")
+	.bg-light.lter.b-b.wrapper-md
+		h1.m-n.font-thin.h3 {{title}}
+	.wrapper-md
+		.panel.panel-default
+			.panel-heading 镜像列表
+			.row.wrapper
+				.col-sm-3
+					.input-group
+						input.input-sm.form-control(type="text",placeholder="search by name")
+						span.input-group-btn
+							button.btn.btn-sm.btn-default(type="button") 搜索
+			.tanle-responsive
+				table.table.table-striped.b-t.b-light
+					thead
+						tr
+							th.col-md-2 名称
+							th.col-md-2 更新
+							th.col-md-1 收藏
+							th.col-md-1 拉取
+							th.col-md-4 描述
+							th.col-md-2 操作
+					tbody
+						tr(ng-repeat="item in images.results")
+							td
+								img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
+								| {{item.name}}
+							td {{time(item.last_updated)}}
+							td {{getNumber(item.star_count)}}
+							td {{getNumber(item.pull_count)}}
+							td {{item.description}}
+							td
+								button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.name)") 查看详情	

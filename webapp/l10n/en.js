@@ -5,7 +5,8 @@
 	    "DASHBOARD" : "Dashboard",
 	    "SETTINGS": "Settings",
 	    "LOGOUT": "Logout",
-	    "APPLICATIONS": "Applications"
+	    "APPLICATIONS": "Applications",
+	    "IMAGES": "Images"
 	  }
 	}
 

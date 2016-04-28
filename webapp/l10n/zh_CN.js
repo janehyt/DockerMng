@@ -5,7 +5,8 @@
 	    "DASHBOARD" : "控制面板",
 	    "SETTINGS": "设置",
 	    "LOGOUT": "登出",
-	    "APPLICATIONS": "应用管理"
+	    "APPLICATIONS": "应用管理",
+	    "IMAGES": "镜像仓库"
 	  }
 	}
 

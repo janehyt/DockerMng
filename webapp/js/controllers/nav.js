@@ -16,7 +16,7 @@ app.controller('NavCtrl',['$scope',function($scope){
 		{
 			name: "Dashboard",
 			translate: "aside.nav.DASHBOARD",
-			icon: "glyphicon-stats text-primary-dker",
+			icon: "glyphicon-dashboard text-primary-dker",
 			sref: "app.dashboard"
 
 		},
@@ -30,18 +30,15 @@ app.controller('NavCtrl',['$scope',function($scope){
 					name: "应用列表",
 					sref: "app.applications.list",
 					translate:""
-				},
-				{
-					name: "应用详情",
-					sref: "app.applications.detail",
-					translate:""
-				},
-				{
-					name: "应用创建",
-					sref: "app.applications.create",
-					translate:""
 				}
 			]
+		},
+		{
+			name: "Images",
+			translate: "aside.nav.IMAGES",
+			icon: "glyphicon-briefcase text-success-dker",
+			sref: "app.images"
+
 		},
 		{
 			name: "Settings",

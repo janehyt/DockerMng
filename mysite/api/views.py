@@ -1,19 +1,20 @@
 # -*- coding: UTF-8 -*- 
-from django.shortcuts import render,get_object_or_404
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 from django.contrib.auth.models import User
+from django.contrib import auth
 from rest_framework import viewsets
-from api.serializers import UserSerializer,ContainerSerializer
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes,detail_route,list_route
 from rest_framework.permissions import AllowAny,IsAuthenticated
-from django.contrib import auth
-from api.docker_client import DockerClient
-from .models import Container
+from .serializers import UserSerializer,ContainerSerializer,ImageSerializer
+from .docker_client import DockerClient,DockerHub
+from .models import Container,Image
 import time
 from docker import errors
-
+import markdown
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -22,7 +23,6 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    # permission_classes = (AllowAny,)
 
     @list_route(methods=['POST'],permission_classes=[AllowAny,])
     def sign_in(self, request):
@@ -83,8 +83,24 @@ class ContainerViewSet(viewsets.ModelViewSet):
     def list(self, request):
         # cli = DockerClient().getClient()
         # containers = cli.containers(all=1)
-        queryset = Container.objects.filter(user=request.user)
-        serializer = ContainerSerializer(queryset,many=True)
+        base_url = "http://"+request.get_host()+request.path
+        count= Container.objects.filter(user=request.user).count()
+
+        page = request.query_params.get('page')
+        size = 3
+        if not page:
+            page='1'
+        
+        if not page.isdigit():
+            return Response({'detail':'Invalid page.'},status=404)
+        page = int(page)
+
+        if page==0 or (page-1)*size>=count:
+             return Response({'detail':'Invalid page.'},status=404)
+
+        queryset = Container.objects.filter(user=request.user)[(page-1)*size:page*size]
+        
+        serializer = ContainerSerializer(queryset,many=True,context={'request': request})
         containers = serializer.data
         cli = DockerClient().getClient()
         for container in containers:
@@ -93,12 +109,22 @@ class ContainerViewSet(viewsets.ModelViewSet):
             except errors.NotFound:
                 container["state"] = {"Status":"ghost"}
             else:
-                print container["name"]
                 container["state"] = c
-
+                container["url"] = base_url+str(container['id'])
         # for container in queryset:
         #     print(container)
-        return Response(containers)
+        r_previous = None
+        if page-1>0:
+            r_previous = base_url+"?page="+str(page-1)
+        r_next = None
+        if page*size<count:
+            r_next = base_url+"?page="+str(page+1)
+        data={"count":count,
+            "previous": r_previous,
+            "next": r_next,
+            "results":containers
+        }
+        return Response(data)
 
     def retrieve(self, request, pk=None):
         # queryset = Container.objects.all()
@@ -108,9 +134,82 @@ class ContainerViewSet(viewsets.ModelViewSet):
             container = cli.inspect_container(data.name)
         except errors.NotFound:
             return Response({"detail":"Not found."},status=404)
-        else:    
+        else: 
+            container['url'] = "http://"+request.get_host()+request.path
             return Response(container)
 
-    def perform_create(self, serializer):
-        print(self.request.data)
-        serializer.save(user=self.request.user)
+class ImageViewSet(viewsets.ViewSet):
+
+    def list(self, request):
+        
+        cli = DockerClient().getClient()
+        try:
+            images = cli.images()
+        except errors.NotFound:
+            pass
+        else:
+            return Response(images)
+
+    def retrieve(self, request, pk=None):
+        cli = DockerClient().getClient()
+        try:
+            image = cli.inspect_image(pk)
+        except errors.NotFound:
+            return Response({"detail":"Not found."},status=404)
+        else:
+            return Response(image)
+        
+
+    @list_route()    
+    def officialRepos(self,request):
+        base_url = "http://"+request.get_host()+request.path
+        cli  = DockerHub()
+        data={}
+
+        name = request.query_params.get('name')
+        if name:
+            data=cli.getOfficalImage(name)
+            data['full_description'] = markdown.markdown(data['full_description'])
+        else:
+
+            page = request.query_params.get('page')
+            if not page:
+                page = '1'
+            
+            data = cli.getOfficalRepo(page)
+
+            r_previous = data.get('previous')
+            r_next = data.get('next')
+            if r_previous:
+                pages=r_previous.split("?")
+                data['previous'] = base_url+"?"+pages[1]
+            if r_next:
+                pages = r_next.split("?")
+                data['next'] = base_url+"?"+pages[1]
+
+        return Response(data)
+
+    @list_route()    
+    def officialImage(self,request):
+        base_url = "http://"+request.get_host()+request.path
+
+        page = request.query_params.get('page')
+        if not page:
+            page = '1'
+        cli  = DockerHub()
+        data = cli.getOfficalRepo(page)
+
+        r_previous = data.get('previous')
+        r_next = data.get('next')
+        if r_previous:
+            pages=r_previous.split("?")
+            data['previous'] = base_url+"?"+pages[1]
+        if r_next:
+            pages = r_next.split("?")
+            data['next'] = base_url+"?"+pages[1]
+
+        return Response(data)
+        
+    # def perform_create(self, serializer):
+    #     print(self.request.data)
+    #     serializer.save(user=self.request.user)

@@ -81,13 +81,13 @@ angular.module('app')
                   url: '/list',
                   templateUrl: 'app/views/applications_list.html'
               })
-              .state('app.applications.detail', {
-                  url: '/detail',
-                  templateUrl: 'app/views/applications_detail.html'
+              .state('app.images', {
+                  url: '/images?page',
+                  templateUrl: 'app/views/images_list.html',
               })
-              .state('app.applications.create', {
-                  url: '/create',
-                  templateUrl: 'app/views/applications_create.html'
+              .state('app.image',{
+                url:'/images/:name',
+                templateUrl: 'app/views/image_detail.html',
               })
               // other pages
               .state('page', {

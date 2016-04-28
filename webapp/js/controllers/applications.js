@@ -1,4 +1,4 @@
-app.controller('ApplicationsCtrl',['$scope','$http','$state',function($scope,$http,$state){
+app.controller('ApplicationsListCtrl',['$scope','$http','$state',function($scope,$http,$state){
 
 	$scope.title="Applications";
 	$scope.containers=[];

@@ -1,0 +1,9 @@
+div(ng-controller="ImageDetailCtrl")
+	.bg-light.lter.b-b.wrapper-md
+		h1.m-n.font-thin.h3 {{title}}
+	.wrapper-md
+		.panel.panel-default
+			.panel-heading 镜像详情
+
+			.panel-body
+				div(ng-bind-html="loadHtmlData()")

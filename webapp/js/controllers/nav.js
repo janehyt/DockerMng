@@ -34,10 +34,10 @@ app.controller('NavCtrl',['$scope',function($scope){
 			]
 		},
 		{
-			name: "Images",
-			translate: "aside.nav.IMAGES",
+			name: "Repo",
+			translate: "aside.nav.REPO",
 			icon: "glyphicon-briefcase text-success-dker",
-			sref: "app.images"
+			sref: "app.repos"
 
 		},
 		{

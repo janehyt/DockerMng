@@ -1,0 +1,37 @@
+div(ng-controller="RepoListCtrl")
+	.bg-light.lter.b-b.wrapper-md
+		h1.m-n.font-thin.h3 {{title}}
+	.wrapper-md
+		.panel.panel-default
+			.panel-heading 镜像列表
+			.panel-body
+				.row.wrapper
+					.col-sm-3
+						.input-group
+							input.input-sm.form-control(type="text",placeholder="search by name")
+							span.input-group-btn
+								button.btn.btn-sm.btn-default(type="button") 搜索
+				.table-responsive
+					table.table.table-striped.b-t.b-light
+						thead
+							tr
+								th.col-xs-3 名称
+								th.col-xs-2 更新
+								th.col-xs-2 收藏
+								th.col-xs-2 拉取
+								//- th.col-xs-4 描述
+								th.col-xs-3 操作
+						tbody.wrapper
+							tr(ng-repeat="item in repos.results")
+								td
+									//- img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
+									| {{(isOfficial(item.namespace)?'':(item.namespace+'/'))+item.name}}
+								td {{time(item.last_updated)}}
+								td {{getNumber(item.star_count)}}
+								td {{getNumber(item.pull_count)}}
+								//- td {{item.description}}
+								td
+									button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.name,item.namespace)") 查看详情
+			
+				.pull-right()
+					pagination.m-t-none.m-b(total-items="repos.count",ng-model="currentPage",max-size="5",rotate="false",ng-change="pageChanged(currentPage)",previous-text="上一页",next-text="下一页")

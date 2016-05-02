@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 # Create your views here.
 from django.contrib.auth.models import User
 from django.contrib import auth
+from collections import OrderedDict
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -16,6 +17,11 @@ import time
 from docker import errors
 import markdown
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -23,6 +29,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
+    pagination_class = StandardResultsSetPagination
 
     @list_route(methods=['POST'],permission_classes=[AllowAny,])
     def sign_in(self, request):
@@ -79,28 +86,17 @@ class ContainerViewSet(viewsets.ModelViewSet):
 
     queryset = Container.objects.all().order_by('-created')
     serializer_class = ContainerSerializer
+    pagination_class = StandardResultsSetPagination
 
     def list(self, request):
-        # cli = DockerClient().getClient()
-        # containers = cli.containers(all=1)
         base_url = "http://"+request.get_host()+request.path
-        count= Container.objects.filter(user=request.user).count()
+        pagination = self.pagination_class()
 
-        page = request.query_params.get('page')
-        size = 3
-        if not page:
-            page='1'
+        queryset = Container.objects.filter(user=request.user)
+
+        data = pagination.paginate_queryset(queryset,request)
         
-        if not page.isdigit():
-            return Response({'detail':'Invalid page.'},status=404)
-        page = int(page)
-
-        if page==0 or (page-1)*size>=count:
-             return Response({'detail':'Invalid page.'},status=404)
-
-        queryset = Container.objects.filter(user=request.user)[(page-1)*size:page*size]
-        
-        serializer = ContainerSerializer(queryset,many=True,context={'request': request})
+        serializer = ContainerSerializer(data,many=True,context={'request': request})
         containers = serializer.data
         cli = DockerClient().getClient()
         for container in containers:
@@ -111,20 +107,7 @@ class ContainerViewSet(viewsets.ModelViewSet):
             else:
                 container["state"] = c
                 container["url"] = base_url+str(container['id'])
-        # for container in queryset:
-        #     print(container)
-        r_previous = None
-        if page-1>0:
-            r_previous = base_url+"?page="+str(page-1)
-        r_next = None
-        if page*size<count:
-            r_next = base_url+"?page="+str(page+1)
-        data={"count":count,
-            "previous": r_previous,
-            "next": r_next,
-            "results":containers
-        }
-        return Response(data)
+        return pagination.get_paginated_response(containers)
 
     def retrieve(self, request, pk=None):
         # queryset = Container.objects.all()
@@ -137,6 +120,69 @@ class ContainerViewSet(viewsets.ModelViewSet):
         else: 
             container['url'] = "http://"+request.get_host()+request.path
             return Response(container)
+
+class RepoViewSet(viewsets.ViewSet):
+    def list(self,request):
+        base_url = "http://"+request.get_host()+request.path
+        cli  = DockerHub()
+        query = request.query_params.get("query")
+        if query:
+            data=cli.searchRepo(request.query_params)
+        else:
+
+            namespace = request.query_params.get("namespace")
+            data = cli.getRepoList(namespace,request.query_params)
+
+        r_previous = data.get('previous')
+        r_next = data.get('next')
+        if r_previous:
+            pages=r_previous.split("?")
+            data['previous'] = base_url+"?"+pages[1]
+        if r_next:
+            pages = r_next.split("?")
+            data['next'] = base_url+"?"+pages[1]
+
+        return Response(OrderedDict([
+            ("count",data.get('count')),
+            ("next",data.get('next')),
+            ("previous",data.get('previous')),
+            ("results",data.get('results'))]))
+
+    def retrieve(self,request,pk=None):
+        cli  = DockerHub()
+        namespace = request.query_params.get("namespace")
+        data=cli.getRepoDetail(pk,namespace)
+        mk = data.get("full_description")
+        if mk:
+            data['full_description'] = markdown.markdown(mk,extensions=['markdown.extensions.tables','markdown.extensions.fenced_code'])
+        else:
+            return Response(data,status=404)
+        return Response(data)
+
+    @detail_route()
+    def tags(self,request,pk=None):
+        base_url = "http://"+request.get_host()+request.path
+        cli = DockerHub()
+        namespace = request.query_params.get("namespace")
+        tag_name = request.query_params.get("name")
+        # params={}
+        # params['page']=request.query_params.get("page",1)
+        # params['page_size'] = request.query_params.get('page_size')
+        data=cli.getRepoTags(pk,namespace,tag_name,request.query_params)
+        r_previous = data.get('previous')
+        r_next = data.get('next')
+        if r_previous:
+            pages=r_previous.split("?")
+            data['previous'] = base_url+"?"+pages[1]
+        if r_next:
+            pages = r_next.split("?")
+            data['next'] = base_url+"?"+pages[1]
+        return Response(OrderedDict([
+            ("count",data.get('count')),
+            ("next",data.get('next')),
+            ("previous",data.get('previous')),
+            ("results",data.get('results'))]))
+
 
 class ImageViewSet(viewsets.ViewSet):
 
@@ -158,58 +204,3 @@ class ImageViewSet(viewsets.ViewSet):
             return Response({"detail":"Not found."},status=404)
         else:
             return Response(image)
-        
-
-    @list_route()    
-    def officialRepos(self,request):
-        base_url = "http://"+request.get_host()+request.path
-        cli  = DockerHub()
-        data={}
-
-        name = request.query_params.get('name')
-        if name:
-            data=cli.getOfficalImage(name)
-            data['full_description'] = markdown.markdown(data['full_description'])
-        else:
-
-            page = request.query_params.get('page')
-            if not page:
-                page = '1'
-            
-            data = cli.getOfficalRepo(page)
-
-            r_previous = data.get('previous')
-            r_next = data.get('next')
-            if r_previous:
-                pages=r_previous.split("?")
-                data['previous'] = base_url+"?"+pages[1]
-            if r_next:
-                pages = r_next.split("?")
-                data['next'] = base_url+"?"+pages[1]
-
-        return Response(data)
-
-    @list_route()    
-    def officialImage(self,request):
-        base_url = "http://"+request.get_host()+request.path
-
-        page = request.query_params.get('page')
-        if not page:
-            page = '1'
-        cli  = DockerHub()
-        data = cli.getOfficalRepo(page)
-
-        r_previous = data.get('previous')
-        r_next = data.get('next')
-        if r_previous:
-            pages=r_previous.split("?")
-            data['previous'] = base_url+"?"+pages[1]
-        if r_next:
-            pages = r_next.split("?")
-            data['next'] = base_url+"?"+pages[1]
-
-        return Response(data)
-        
-    # def perform_create(self, serializer):
-    #     print(self.request.data)
-    #     serializer.save(user=self.request.user)

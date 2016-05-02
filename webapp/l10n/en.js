@@ -6,7 +6,7 @@
 	    "SETTINGS": "Settings",
 	    "LOGOUT": "Logout",
 	    "APPLICATIONS": "Applications",
-	    "IMAGES": "Images"
+	    "REPO": "Repositories"
 	  }
 	}
 

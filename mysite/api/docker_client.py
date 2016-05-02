@@ -37,21 +37,35 @@ class DockerHub(object):
 		if host:
 			self._host=host
 		self._base_url="https://"+self._host+"/v2/repositories"
+		self._search_url = "https://"+self._host+"/v2/search/repositories/"
 
 
-	def getRepo(self,namespace,page='1'):
-		r = requests.get(self._base_url+"/"+namespace+"/?page="+page)
+	def getRepoList(self,namespace=None,params={}):
+		if not namespace:
+			namespace = self._offical
+		r = requests.get(self._base_url+"/"+namespace,params)
 		result = json.loads(r.text)
 			
 		return result
 
-	def getOfficalRepo(self,page='1'):
-		return self.getRepo(self._offical,page)
-
-	def getImage(self,namespace,name):
+	def getRepoDetail(self,name,namespace=None):
+		if not namespace:
+			namespace = self._offical
 		r = requests.get(self._base_url+"/"+namespace+"/"+name)
 		result = json.loads(r.text)
 		return result
 
-	def getOfficalImage(self,name):
-		return self.getImage(self._offical,name)	
+	def getRepoTags(self,name,namespace=None,tag_name=None,params={}):
+		if not namespace:
+			namespace=self._offical
+		if not tag_name:
+			tag_name=""
+		r = requests.get(self._base_url+"/"+namespace+"/"+name+"/tags/"+tag_name,params)
+		result=json.loads(r.text)
+		return result
+		
+	def searchRepo(self,params={}):
+		r = requests.get(self._search_url,params)
+		result=json.loads(r.text)
+		return result
+	

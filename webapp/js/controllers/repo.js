@@ -1,28 +1,21 @@
 app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$state){
 
-	$scope.title="仓库列表";
-	$scope.repos={};
-	$scope.currentPage=2;
-	// $scope.pageSize=$state.params.page_size;
-	$scope.pageChanged=function(data){
-		// console.info(data);
-		console.info("changed");
-		$scope.loadData(data);
-	}
-
-	// console.log($state.params)
-	$scope.loadData=function(page){
-		var params = $state.params;
-		
-		params['page']=$scope.currentPage;
-		console.info($state.params);
-		// params['namespace']='webdevops'
-		$http.get("api/repos",{params:params})
+	$scope.loadData=function(url){
+		if(!url){
+			url = "api/repos";
+		}
+		$scope.repos.next=null;
+		$scope.repos.previous=null;
+		$http.get(url)
 			.then(function(response){
-				$scope.repos=response.data
+				$scope.repos=response.data;
+				console.info($scope.repos);
 			},function(response){
 				console.info(response);
 			});
+	}
+	$scope.otherPage=function(params){
+		$state.go('app.repos',params);
 	}
 	$scope.getNumber=function(data){
 		var rule = [
@@ -45,28 +38,59 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 
 	}
 	$scope.time=function(data){
-		var ti = data.split("T");
-		return ti[0];
+		if(data&&data.indexOf("T")){
+			var ti = data.split("T");
+			return ti[0];
+		}
+		return data;
 	}
 	$scope.isOfficial=function(namespace){
 		return namespace=="library"?true:false
 	}
-	$scope.detail=function(name,namespace){
-		$state.go('app.repo',{name:name,namespace:namespace});
+	$scope.detail=function(name){
+		if(name.indexOf("/")!=-1){
+			var list = name.split("/");
+			$state.go('app.repo',{name:list[1],namespace:list[0]});
+		}else
+			$state.go('app.repo',{name:name,namespace:"library"});
 	}
-	$scope.loadData();
+	$scope.search=function(data){
+		console.info(data);
+		if(data&&data.length!=0){
+			$http.get("api/repos?query="+data)
+				.then(function(response){
+					$scope.results=response.data
+					console.info(response.data);
+				},function(response){
+					console.info(response);
+				});
+		}else{
+			console.info("null");
+		}
+	}
+	$scope.loadResults = function(url){
+		$http.get(url)
+			.then(function(response){
+				$scope.results=response.data;
+				console.info($scope.results);
+			},function(response){
+				console.info(response);
+			});
+	}
+	// $scope.loadData();
+	$scope.title="仓库列表";
+	$scope.repos={};
+	$scope.results={};
+	// $scope.query="";
 	
 
 }]);
 app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce',function($scope,$http,$state,$sce){
 
-	$scope.title="仓库详情";
-	$scope.name = ""
-	$scope.data={full_description:"",last_updated:"",pull_count:0};
-	$scope.tags={}
+
 	$scope.loadData=function(){	
-		$scope.name=($scope.isOfficial($state.params.namespace)?"":$state.params.namespace+"/")+
-			$state.params.name	
+		// console.info("data");
+		$scope.tab=1;
 		$http.get("api/repos/"+$state.params.name+"?namespace="+$state.params.namespace)
 			.then(function(response){
 				$scope.data=response.data;
@@ -75,11 +99,17 @@ app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce',function($scop
 				console.info(response);
 			});
 	}
-	$scope.loadTags=function(){	
-		$http.get("api/repos/"+$state.params.name+"/tags"+"?namespace="+$state.params.namespace)
+	$scope.loadTags=function(url){
+		// console.info("tag");
+		$scope.tab=2;
+		$scope.tags.next=null;
+		$scope.tags.previous=null;
+		if(!url)
+			url = "api/repos/"+$state.params.name+"/tags"+"?namespace="+$state.params.namespace;
+		$http.get(url)
 			.then(function(response){
 				$scope.tags=response.data;
-				console.info($scope.tags);
+				// console.info($scope.tags);
 			},function(response){
 				console.info(response);
 			});
@@ -92,8 +122,11 @@ app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce',function($scop
 		return namespace=="library"?true:false
 	}
 	$scope.time=function(data){
-		var ti = data.split("T");
-		return ti[0];
+		if(data&&data.indexOf("T")!=-1){
+			var ti = data.split("T");
+			return ti[0];
+		}
+		return data
 	}
 	$scope.size=function(data){
 		if(!data)
@@ -129,15 +162,12 @@ app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce',function($scop
 		console.info(detail);
 	}
 
-	// $scope.loadData();
-	// $scope.stateClass = function(status){
-	// 	if(status=="running")
-	// 		return "label-success"
-	// 	else if(status=="ghost")
-	// 		return "label-default"
-	// 	else
-	// 		return "label-warning"
-	// }
+	$scope.title="仓库详情";
+	$scope.name=($scope.isOfficial($state.params.namespace)?"":$state.params.namespace+"/")+
+			$state.params.name
+	$scope.data={full_description:"",last_updated:"",pull_count:0};
+	$scope.tags={}
+	
 	
 
 }]);

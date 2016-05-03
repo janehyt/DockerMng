@@ -31,6 +31,13 @@ div(ng-controller="RepoDetailCtrl")
 									span.col-xs-3 {{time(tag.last_updated)}}
 									span.col-xs-3 {{size(tag.full_size)}}
 									.pull-right
-										button.btn.btn-default.btn-sm(ng-click="publish(tag.name)") 部署
+										button.btn.btn-default.btn-sm(ng-click="publish(tag.name)") 部署	
+
+							.pull-right
+								a.btn.btn-default.btn-sm(ng-disabled="!tags.previous",ng-click="loadTags(tags.previous)") 上一页
+								a.btn.btn-default.btn-sm(ng-disabled="!tags.next",ng-click="loadTags(tags.next)") 下一页
+							br
+
+							
 
 

@@ -2,36 +2,71 @@ div(ng-controller="RepoListCtrl")
 	.bg-light.lter.b-b.wrapper-md
 		h1.m-n.font-thin.h3 {{title}}
 	.wrapper-md
-		.panel.panel-default
-			.panel-heading 镜像列表
+		.panel
+			.panel-heading.bg-dark
+				.h2.text-lt 镜像仓库
+				.wrapper
+					p.text-lt DockerHub镜像默认显示官方镜像，搜索可查看更多镜像
 			.panel-body
-				.row.wrapper
-					.col-sm-3
-						.input-group
-							input.input-sm.form-control(type="text",placeholder="search by name")
-							span.input-group-btn
-								button.btn.btn-sm.btn-default(type="button") 搜索
-				.table-responsive
-					table.table.table-striped.b-t.b-light
-						thead
-							tr
-								th.col-xs-3 名称
-								th.col-xs-2 更新
-								th.col-xs-2 收藏
-								th.col-xs-2 拉取
-								//- th.col-xs-4 描述
-								th.col-xs-3 操作
-						tbody.wrapper
-							tr(ng-repeat="item in repos.results")
-								td
-									//- img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
-									| {{(isOfficial(item.namespace)?'':(item.namespace+'/'))+item.name}}
-								td {{time(item.last_updated)}}
-								td {{getNumber(item.star_count)}}
-								td {{getNumber(item.pull_count)}}
-								//- td {{item.description}}
-								td
-									button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.name,item.namespace)") 查看详情
-			
-				.pull-right()
-					pagination.m-t-none.m-b(total-items="repos.count",ng-model="currentPage",max-size="5",rotate="false",ng-change="pageChanged(currentPage)",previous-text="上一页",next-text="下一页")
+				tabset.tab-container
+					tab(select="loadData()")
+						tab-heading DockerHub镜像
+						.wrapper
+							.table-responsive
+								table.table.table-striped.b-t.b-light
+									thead
+										tr
+											th.col-xs-3 名称
+											th.col-xs-2 更新
+											th.col-xs-2 收藏
+											th.col-xs-2 拉取
+											//- th.col-xs-4 描述
+											th.col-xs-3 操作
+									tbody.wrapper
+										tr(ng-repeat="item in repos.results")
+											td
+												//- img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
+												| {{(isOfficial(item.namespace)?'':(item.namespace+'/'))+item.name}}
+											td {{time(item.last_updated)}}
+											td {{getNumber(item.star_count)}}
+											td {{getNumber(item.pull_count)}}
+											//- td {{item.description}}
+											td
+												button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.name)") 查看详情
+				
+								.pull-right
+									a.btn.btn-default.btn-sm(ng-disabled="!repos.previous",ng-click="loadData(repos.previous)") 上一页
+									a.btn.btn-default.btn-sm(ng-disabled="!repos.next",ng-click="loadData(repos.next)") 下一页
+					tab
+						tab-heading 搜索镜像
+						.wrapper
+							form.m-b-md(ng-submit="search(query)",name="searchForm")
+								.input-group.col-sm-4
+									input.input-md.form-control(type="text",placeholder="搜索镜像",ng-model="query")
+									span.input-group-btn
+										input.btn.btn-md.btn-default(type="submit",value="搜索")
+							.table-responsive(ng-show="results.results")
+								table.table.table-striped.b-t.b-light
+									thead
+										tr
+											th.col-xs-4 名称
+											th.col-xs-2 收藏
+											th.col-xs-2 拉取
+											//- th.col-xs-4 描述
+											th.col-xs-4 操作
+									tbody.wrapper
+										tr(ng-repeat="item in results.results")
+											td
+												//- img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
+												| {{item.repo_name}}
+										
+											td {{getNumber(item.star_count)}}
+											td {{getNumber(item.pull_count)}}
+											//- td {{item.description}}
+											td
+												button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.repo_name)") 查看详情
+								.pull-right
+									a.btn.btn-default.btn-sm(ng-disabled="!results.previous",ng-click="loadResults(results.previous)") 上一页
+									a.btn.btn-default.btn-sm(ng-disabled="!results.next",ng-click="loadResults(results.next)") 下一页
+							//- .h3.text-primary.text-center(ng-show="!results.results||results.results.length==0") 暂无镜像显示
+					

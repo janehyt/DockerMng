@@ -2,5 +2,6 @@
 /webapp/node_modules
 /mysite/dist
 /mysite/py_env
+/mysite/upload
 __pycache__
 *.pyc

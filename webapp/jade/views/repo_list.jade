@@ -4,7 +4,7 @@ div(ng-controller="RepoListCtrl")
 	.wrapper-md
 		.panel
 			.panel-heading.bg-dark
-				.h2.text-lt 镜像仓库
+				.h2.text-lt 仓库列表
 				.wrapper
 					p.text-lt DockerHub镜像默认显示官方镜像，搜索可查看更多镜像
 			.panel-body
@@ -27,9 +27,9 @@ div(ng-controller="RepoListCtrl")
 											td
 												//- img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
 												| {{(isOfficial(item.namespace)?'':(item.namespace+'/'))+item.name}}
-											td {{time(item.last_updated)}}
-											td {{getNumber(item.star_count)}}
-											td {{getNumber(item.pull_count)}}
+											td {{item.last_updated|time}}
+											td {{item.star_count|largeNumber}}
+											td {{item.pull_count|largeNumber}}
 											//- td {{item.description}}
 											td
 												button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.name)") 查看详情
@@ -60,8 +60,8 @@ div(ng-controller="RepoListCtrl")
 												//- img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
 												| {{item.repo_name}}
 										
-											td {{getNumber(item.star_count)}}
-											td {{getNumber(item.pull_count)}}
+											td {{item.star_count|largeNumber}}
+											td {{item.pull_count|largeNumber}}
 											//- td {{item.description}}
 											td
 												button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.repo_name)") 查看详情

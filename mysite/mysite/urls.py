@@ -27,6 +27,7 @@ router.register(r'users', views.UserViewSet)
 router.register(r'containers', views.ContainerViewSet,base_name="container")
 router.register(r'images', views.ImageViewSet,base_name="image")
 router.register(r'repos',views.RepoViewSet,base_name="repo")
+router.register(r'files',views.FileViewSet,base_name="file")
 
 urlpatterns = [
     url(r'^$',serve, 
@@ -36,6 +37,7 @@ urlpatterns = [
         {'document_root': settings.DIST_PATH,
         'path':'index.html'}),
     url(r'^api/', include(router.urls)),
+    # url(r'^upload/$',views.FileUploadView.as_view()),
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 

@@ -23,22 +23,34 @@ app.controller('NavCtrl',['$scope',function($scope){
 		{
 			name: "Applications",
 			translate: "aside.nav.APPLICATIONS",
-			icon: " glyphicon-th-large text-warning-dker",
-			include:"app.applications",
-			sub_menus: [
-				{
-					name: "应用列表",
-					sref: "app.applications.list",
-					translate:""
-				}
-			]
+			icon: "glyphicon-th-large text-warning-dker",
+			sref: "app.applications"
 		},
+		// {
+		// 	name: "Applications",
+		// 	translate: "aside.nav.APPLICATIONS",
+		// 	icon: " glyphicon-th-large text-warning-dker",
+		// 	include:"app.applications",
+		// 	sub_menus: [
+		// 		{
+		// 			name: "应用列表",
+		// 			sref: "app.applications.list",
+		// 			translate:""
+		// 		}
+		// 	]
+		// },
 		{
 			name: "Repo",
 			translate: "aside.nav.REPO",
 			icon: "glyphicon-briefcase text-success-dker",
 			sref: "app.repos"
 
+		},
+		{
+			name: "File",
+			translate: "aside.nav.FILE",
+			icon: "glyphicon-file text-danger-dker",
+			sref: "app.file"
 		},
 		{
 			name: "Settings",

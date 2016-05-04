@@ -122,7 +122,7 @@ var source = {
              'fonts/**/*']
   },
   vendor: {
-    files: 'vendor/**/*.js',
+    files: 'vendor/**/*',
   }
   
 };

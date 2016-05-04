@@ -1,13 +1,17 @@
 div(ng-controller="RepoDetailCtrl")
 	.bg-light.lter.b-b.wrapper-md
-		h1.m-n.font-thin.h3 {{title}}
+		a(ui-sref="app.repos").m-n.font-thin.h3
+			i.fa.fa-arrow-left
+			|  {{title}}
+		//- h1.m-n.font-thin.h3 {{title}}
 	.wrapper-md
+		
 		.panel
 			.panel-heading.bg-dark
 				.h2.text-lt {{name}}
 				.row.wrapper
-					.col-sm-2.text-lt 最近更新:{{time(data.last_updated)}}
-					.col-sm-2.text-lt 拉取数: {{getNumber(data.pull_count)}}
+					.col-sm-2.text-lt 最近更新: {{data.last_updated|time}}
+					.col-sm-2.text-lt 拉取数: {{data.pull_count|largeNumber}}
 				span.wrapper
 					button.btn.btn-primary.btn-sm(ng-click="publish('latest')") 部署latest版本
 				
@@ -28,8 +32,8 @@ div(ng-controller="RepoDetailCtrl")
 									span.col-xs-3
 										i.fa.fa-tag.fa-fw.m-r-xs
 										strong {{tag.name}}
-									span.col-xs-3 {{time(tag.last_updated)}}
-									span.col-xs-3 {{size(tag.full_size)}}
+									span.col-xs-3 {{tag.last_updated|time}}
+									span.col-xs-3 {{tag.full_size|size}}
 									.pull-right
 										button.btn.btn-default.btn-sm(ng-click="publish(tag.name)") 部署	
 

@@ -8,6 +8,12 @@ angular.module('app')
           debug:  false,
           events: true,
           modules: [
+              {
+                  name:'angularFileUpload',
+                  files: [
+                    'app/vendor/modules/angular-file-upload/angular-file-upload.min.js'
+                  ]
+              }
               // {
               //     name: 'ngGrid',
               //     files: [

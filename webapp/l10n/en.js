@@ -6,7 +6,8 @@
 	    "SETTINGS": "Settings",
 	    "LOGOUT": "Logout",
 	    "APPLICATIONS": "Applications",
-	    "REPO": "Repositories"
+	    "REPO": "Repositories",
+	    "FILE": "File"
 	  }
 	}
 

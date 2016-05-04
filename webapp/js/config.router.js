@@ -73,11 +73,11 @@ angular.module('app')
                   url: '/settings',
                   templateUrl: 'app/views/settings.html'
               })
-              .state('app.applications',{
-                url: '/applications',
-                template: '<div ui-view class="fade-in-up"></div>'
-              })
-              .state('app.applications.list', {
+              // .state('app.applications',{
+              //   url: '/applications',
+              //   template: '<div ui-view class="fade-in-up"></div>'
+              // })
+              .state('app.applications', {
                   url: '/list',
                   templateUrl: 'app/views/applications_list.html'
               })
@@ -88,6 +88,16 @@ angular.module('app')
               .state('app.repo',{
                 url:'/repos/:namespace/:name',
                 templateUrl: 'app/views/repo_detail.html',
+              })
+              .state('app.file', {
+                  url: '/file',
+                  templateUrl: 'app/views/file.html',
+                  resolve: {
+                      deps: ['$ocLazyLoad',
+                        function( $ocLazyLoad){
+                          return $ocLazyLoad.load('angularFileUpload');
+                      }]
+                  }
               })
               // other pages
               .state('page', {

@@ -1,5 +1,5 @@
 app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$state){
-
+	// uiLoad.load('app/vendor/libs/moment.min.js');
 	$scope.loadData=function(url){
 		if(!url){
 			url = "api/repos";
@@ -17,33 +17,7 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 	$scope.otherPage=function(params){
 		$state.go('app.repos',params);
 	}
-	$scope.getNumber=function(data){
-		var rule = [
-			{name:'10M+',min:"10000000"},
-			{name:'5M+',min:"5000000"},
-			{name:'1M+',min:"1000000"},
-			{name:'500K+',min:"500000"},
-			{name:'100K+',min:"100000"},
-			{name:'50K+',min:"50000"},
-			{name:'10K+',min:"10000"}];
-		for(var i =0;i<rule.length; i++){
-			if(data>rule[i].min){
-				return rule[i].name;
-			}
-		}
-		if(data>1000)
-			return (data/1000).toFixed(1)+"K";
-		return data;
-
-
-	}
-	$scope.time=function(data){
-		if(data&&data.indexOf("T")){
-			var ti = data.split("T");
-			return ti[0];
-		}
-		return data;
-	}
+	
 	$scope.isOfficial=function(namespace){
 		return namespace=="library"?true:false
 	}
@@ -78,7 +52,7 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 			});
 	}
 	// $scope.loadData();
-	$scope.title="仓库列表";
+	$scope.title="镜像仓库";
 	$scope.repos={};
 	$scope.results={};
 	// $scope.query="";
@@ -121,48 +95,13 @@ app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce',function($scop
 	$scope.isOfficial=function(namespace){
 		return namespace=="library"?true:false
 	}
-	$scope.time=function(data){
-		if(data&&data.indexOf("T")!=-1){
-			var ti = data.split("T");
-			return ti[0];
-		}
-		return data
-	}
-	$scope.size=function(data){
-		if(!data)
-			return "0 B";
-		if(data<1024)
-			return data+" B"
-		if(data<1048576)
-			return Math.round(data/1024)+" K"
-		return Math.round(data/1048576)+" M"
-	}
-	$scope.getNumber=function(data){
-		var rule = [
-			{name:'10M+',min:"10000000"},
-			{name:'5M+',min:"5000000"},
-			{name:'1M+',min:"1000000"},
-			{name:'500K+',min:"500000"},
-			{name:'100K+',min:"100000"},
-			{name:'50K+',min:"50000"},
-			{name:'10K+',min:"10000"}];
-		for(var i =0;i<rule.length; i++){
-			if(data>rule[i].min){
-				return rule[i].name;
-			}
-		}
-		if(data>1000)
-			return (data/1000).toFixed(1)+"K";
-		return data;
-
-
-	}
+	
 	$scope.publish=function(data){
 		var detail = $scope.name+":"+data
 		console.info(detail);
 	}
 
-	$scope.title="仓库详情";
+	$scope.title="镜像仓库";
 	$scope.name=($scope.isOfficial($state.params.namespace)?"":$state.params.namespace+"/")+
 			$state.params.name
 	$scope.data={full_description:"",last_updated:"",pull_count:0};

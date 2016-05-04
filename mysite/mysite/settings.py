@@ -145,4 +145,5 @@ DIST_PATH = os.path.join(BASE_DIR, 'dist')
 APP_PATH = os.path.join(DIST_PATH, 'app')
 
 STATIC_ROOT = os.path.join(BASE_DIR,'dist')
+UPLOAD_ROOT = os.path.join(BASE_DIR,'upload')
 DOCKER_CLIENT = 'unix://var/run/docker.sock'

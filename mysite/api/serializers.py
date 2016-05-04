@@ -31,8 +31,8 @@ class ContainerSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Container
         fields = ('id','name','user','state','command','created','updated')
-    created = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S",read_only=True)
-    updated = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S",read_only=True)
+    created = serializers.DateTimeField(read_only=True)
+    updated = serializers.DateTimeField(read_only=True)
     # image = serializers.CharField(write_only=True)
 
     # def create(self,data):
@@ -43,6 +43,6 @@ class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         fields = ('id','name','user','state','tag','created','updated')
-    created = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S",read_only=True)
-    updated = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S",read_only=True)
+    created = serializers.DateTimeField(read_only=True)
+    updated = serializers.DateTimeField(read_only=True)
     # image = serializers.CharField(write_only=True)   

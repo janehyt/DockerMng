@@ -21,6 +21,12 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state',function($scope
 		else
 			return "label-warning"
 	}
+	$scope.search = function(query){
+		console.info(query);
+	}
+	$scope.create = function(){
+		$state.go('app.repos');
+	}
 	
 
 }]);

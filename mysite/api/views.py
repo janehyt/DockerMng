@@ -6,16 +6,21 @@ from django.contrib.auth.models import User
 from django.contrib import auth
 from collections import OrderedDict
 from rest_framework import viewsets
+from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.parsers import FileUploadParser,MultiPartParser
 from rest_framework.decorators import permission_classes,detail_route,list_route
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from .serializers import UserSerializer,ContainerSerializer,ImageSerializer
 from .docker_client import DockerClient,DockerHub
 from .models import Container,Image
+from api import files
 import time
 from docker import errors
 import markdown
+from mysite import settings
+import os
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
@@ -204,3 +209,24 @@ class ImageViewSet(viewsets.ViewSet):
             return Response({"detail":"Not found."},status=404)
         else:
             return Response(image)
+
+class FileViewSet(viewsets.ViewSet):
+    def list(self,request):
+        # path = request.query_params.get("path")
+        # if path:
+        #     path = request.user.username+"/"+path
+        # else:
+        #     path = request.user.username
+        file_list = files.fileList(request.user.username)
+        if file_list:
+            return Response(file_list)
+        return Response(status=404);
+
+    # 上传文件
+    def create(self, request,format=None):
+        file_obj = request.data['file']
+        status = files.fileUpload(str(file_obj),file_obj,request.user.username)
+        # ...
+        # do some stuff with uploaded file
+        # ...
+        return Response(status=status)

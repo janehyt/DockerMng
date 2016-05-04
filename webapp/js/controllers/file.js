@@ -1,4 +1,5 @@
-app.controller('FileCtrl',['$scope','$http','FileUploader',function($scope,$http,FileUploader){
+app.controller('FileCtrl',['$scope','$http','FileUploader','$modal',
+  function($scope,$http,FileUploader,$modal){
 
     $scope.loadFiles = function(){
       $http.get("api/files").then(function(response){
@@ -11,7 +12,20 @@ app.controller('FileCtrl',['$scope','$http','FileUploader',function($scope,$http
       console.info(name);;
     }
     $scope.rename = function(name){
-      console.info("rename");
+      var modalIns = $modal.open({
+        templateUrl: 'rename.html',
+        controller: 'ModalInsCtrl',
+        resolve:{
+          name:function(){
+            return name;
+          }
+        }
+      });
+      modalIns.result.then(function(data){
+        console.info(name,data);
+      },function(){
+        console.info("dismiss");
+      })
     }
     $scope.remove = function(name){
       console.info("remove");
@@ -94,3 +108,27 @@ app.controller('FileCtrl',['$scope','$http','FileUploader',function($scope,$http
 	
 
 }]);
+app.controller('ModalInsCtrl',['$scope','$modalInstance','name',
+  function($scope,$modalInstance,name){
+    $scope.item = {name:"",suffix:""};
+    $scope.init=function(){
+      if(name){
+        var index = name.indexOf(".")
+        if(index!=-1){
+          $scope.item.name=name.substring(0,index);
+          $scope.item.suffix=name.substring(index);
+        }
+      }
+      
+      
+    }
+    $scope.ok = function () {
+      $modalInstance.close($scope.rename+$scope.item.suffix);
+    };
+
+    $scope.cancel = function () {
+      $modalInstance.dismiss('cancel');
+    };
+    $scope.init();
+
+  }]);

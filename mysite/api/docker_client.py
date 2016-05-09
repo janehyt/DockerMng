@@ -3,6 +3,8 @@ from docker import Client
 from mysite import settings as settings
 import json
 import requests
+import os
+import random
 
 class Singleton(type):  
     def __init__(cls, name, bases, dict):    
@@ -26,6 +28,26 @@ class DockerClient(object):
 
 	def getInfo(self): 
 		return 	json.dumps(self.client.info())
+
+	def getHostConfig(self,volumes="",links="",ports="",restart=False):
+		host_config={}
+		if len(volumes)>0:
+			host_config['Binds']=volumes.split(",")
+		if len(links)>0:
+			host_config['Links'] = volumes.split(",")
+		if len(ports)>0:
+			ports = ports.split(",")
+			port_bind={}
+			for p in ports:
+				ex = str(p)+"/tcp"
+				de = getPort()
+				port_bind[ex]=[{"HostPort":str(de)}]
+			host_config['PortBindings']=port_bind
+		if restart:
+			host_config["RestartPolicy"] = { "Name": "always" }
+		else:
+			host_config["RestartPolicy"] = { "Name": "", "MaximumRetryCount": 5 }
+		return host_config
 
 class DockerHub(object):
 	__metaclass__=Singleton
@@ -68,4 +90,14 @@ class DockerHub(object):
 		r = requests.get(self._search_url,params)
 		result=json.loads(r.text)
 		return result
-	
+
+
+def getPort():
+	pscmd = "netstat -ntl |grep -v Active| grep -v Proto|awk '{print $4}'|awk -F: '{print $NF}'"
+	procs = os.popen(pscmd).read()
+	procarr = procs.split("\n")
+	tt= random.randint(10000,65534)
+	if tt not in procarr:
+		return tt
+	else:
+		getPort()

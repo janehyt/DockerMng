@@ -12,16 +12,13 @@ from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser,MultiPartParser
 from rest_framework.decorators import permission_classes,detail_route,list_route
 from rest_framework.permissions import AllowAny,IsAuthenticated
-from .serializers import UserSerializer,ContainerSerializer,ImageSerializer
+from .serializers import UserSerializer,ContainerSerializer,ImageSerializer,ProgressSerializer
 from .docker_client import DockerClient,DockerHub
-from .models import Container,Image
+from .models import Container,Image,Progress
 from api import files
-import time
 from docker import errors
-import markdown
 from mysite import settings
-import os
-
+import os,json,markdown,time
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -117,6 +114,7 @@ class ContainerViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         # queryset = Container.objects.all()
         data = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        print self.get_serializer(data).data
         cli = DockerClient().getClient()
         try:
             container = cli.inspect_container(data.name)
@@ -125,6 +123,146 @@ class ContainerViewSet(viewsets.ModelViewSet):
         else: 
             container['url'] = "http://"+request.get_host()+request.path
             return Response(container)
+
+    def update(self,request,pk=None):
+        return Response({"detail":"PUT method forbidden"},status=403)
+    
+    def destroy(self,request,pk=None):
+        data = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        try:
+            cli.remove_container(data.name)
+            
+        except errors.APIError,e:
+            if e.response.status_code==404:
+                pass
+            else:
+                return Response({"reason":e.response.reason,
+                    "detail":e.explanation},status=e.response.status_code)
+        data.delete()
+        
+        return Response(self.get_serializer(data).data)
+
+    def create(self,request):
+        data = request.data
+        nameFilter = Container.objects.filter(name=data.get('name'))     
+        if(nameFilter):
+            return Response("容器名已存在",status=406)
+        user = request.user
+        data['user'] = user.id
+        serializer = self.get_serializer(data=data)
+        res = Response({"detail":"参数不符合要求"},status=406)
+        if serializer.is_valid():
+            valid_data = serializer.data
+            valid_data['user'] = user
+            repo = valid_data.get('image')
+            if repo:
+                repos = repo.split(":")
+                image_name = repos[0]
+                image_tag = "latest"
+                if len(repos)==2:
+                    image_tag = repos[1]
+                image = Image.objects.get_or_create(name=image_name,tag=image_tag)[0]
+                users =  image.users.filter(pk=user.id)
+                if user not in users:
+                    add = image.users.add(user)
+                # image_user=image.users.filter(pk=user.id)
+                # print image_user
+                valid_data['image']=image
+                container = Container(**valid_data)
+                container.save()
+                res = Response(self.get_serializer(container).data)
+        return res
+    @detail_route()
+    def progress(self,request,pk=None):
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        # data = self.get_serializer(container).data
+        # data = "To Run"
+        if container.is_pulling():
+            image = container.image
+            progresses = image.progresses.all()
+            serializer = ProgressSerializer(progresses,many=True)
+            return Response(serializer.data)
+        return Response("OK")
+    @detail_route()
+    def pull_image(self,request,pk=None):
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        # data = self.get_serializer(container).data
+        # data = "To Run"
+        print "pull"
+        if container.to_pull() or container.is_pulling():
+            image = container.image
+            pull_image = cli.pull(str(image),stream=True)
+            image.status = Image.PULLING
+            image.save()
+            for line in pull_image:
+                pr = json.loads(line)
+                status = pr.get("status")
+                p_id=pr.get("id","")
+                if "Pulling from" not in status and len(p_id)==12:
+                    progress = Progress(image=image,id=p_id,
+                        status=status)
+                    detail = pr.get("progressDetail")
+                    if detail:
+                        progress.detail=json.dumps(detail)
+                        progress.pr = pr.get("progress")
+                    progress.save()
+            image.status=Image.EXISTED
+            image.save()
+            print image.status
+            return Response("Pulling complete")
+        return Response("OK")
+
+    @detail_route()
+    def run(self,request,pk=None):
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        # data = self.get_serializer(container).data
+        # data = "To Run"
+        data={}
+        if container.to_run():
+            host_config =  DockerClient().getHostConfig(
+                    volumes=container.volumes,
+                    links=container.links,
+                    ports=container.ports,
+                    restart=container.restart
+                )
+            # print host_config
+            command = container.command
+            print len(command)
+            if(len(command)>0):
+                print command
+                data=cli.create_container(name=container.name,image=str(container.image),
+                environment=container.envs.split(","),command=command,
+                host_config=host_config,detach=True)
+            else:
+                print 'no command'
+                data=cli.create_container(name=container.name,image=str(container.image),
+                environment=container.envs.split(","),
+                host_config=host_config,detach=True)
+            if data.get("Id"):
+                container.status=Container.EXISTED
+                container.save()
+                cli.start(container.name)
+                return Response(True)
+        elif container.is_existed():
+            cli.start(container.name)
+            return Response(True)
+
+        # print data
+        return Response(False)
+
+    @detail_route()
+    def stop(self,request,pk=None):
+        container = self.get_object()
+        cli = DockerClient().getClient()
+        data = self.get_serializer(container).data
+        if container.status==Container.EXISTED:
+            data=cli.stop(container.name)
+        # print data
+        return Response(data)
 
 class RepoViewSet(viewsets.ViewSet):
     def list(self,request):
@@ -189,26 +327,30 @@ class RepoViewSet(viewsets.ViewSet):
             ("results",data.get('results'))]))
 
 
-class ImageViewSet(viewsets.ViewSet):
+class ImageViewSet(viewsets.ModelViewSet):
 
-    def list(self, request):
+    queryset = Image.objects.all().order_by('-created')
+    serializer_class = ImageSerializer
+    pagination_class = StandardResultsSetPagination
+
+    # def list(self, request):
         
-        cli = DockerClient().getClient()
-        try:
-            images = cli.images()
-        except errors.NotFound:
-            pass
-        else:
-            return Response(images)
+    #     cli = DockerClient().getClient()
+    #     try:
+    #         images = cli.images()
+    #     except errors.NotFound:
+    #         pass
+    #     else:
+    #         return Response(images)
 
-    def retrieve(self, request, pk=None):
-        cli = DockerClient().getClient()
-        try:
-            image = cli.inspect_image(pk)
-        except errors.NotFound:
-            return Response({"detail":"Not found."},status=404)
-        else:
-            return Response(image)
+    # def retrieve(self, request, pk=None):
+    #     cli = DockerClient().getClient()
+    #     try:
+    #         image = cli.inspect_image(pk)
+    #     except errors.NotFound:
+    #         return Response({"detail":"Not found."},status=404)
+    #     else:
+    #         return Response(image)
 
 class FileViewSet(viewsets.ViewSet):
     def list(self,request):
@@ -226,6 +368,7 @@ class FileViewSet(viewsets.ViewSet):
     def create(self, request,format=None):
         file_obj = request.data['file']
         status = files.fileUpload(str(file_obj),file_obj,request.user.username)
+        
         # ...
         # do some stuff with uploaded file
         # ...

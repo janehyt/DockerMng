@@ -2,7 +2,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from .docker_client import DockerClient
-from  .models import Container,Image
+from  .models import Container,Image,Progress
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -27,22 +27,40 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         instance.save()
         return instance
 
-class ContainerSerializer(serializers.HyperlinkedModelSerializer):
+class ContainerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Container
-        fields = ('id','name','user','state','command','created','updated')
+        fields = ('id','name','user','image','command','ports','volumes',
+            'links','envs','restart','created','updated')
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)
-    # image = serializers.CharField(write_only=True)
+    image = serializers.CharField()
+    # repository = serializers.CharField(write_only=True)
+    # def create(self,validated_data):
+    #     repo = validated_data.get('image')
+    #     user = validated_data.get('user')
+    #     if repo:
+    #         repos = repo.split(":")
+    #         image_name = repos[0]
+    #         image_tag = "latest"
+    #         if len(repos)==2:
+    #             image_tag = repo[1]
+    #         print image_name+":"+image_tag
 
-    # def create(self,data):
-    #     print (data)
-    #     # del data['image']
-    #     return Container(**data)
+    #         image = Image.objects.get_or_create(name=image_name,tag=image_tag)
+    #         print image[0].users
+    #         # print image
+    #         validated_data['image']=image[0]
+    #     return Container(**validated_data)
+
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = ('id','name','user','state','tag','created','updated')
+        fields = ('id','name','users','status','tag','created','updated')
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)
     # image = serializers.CharField(write_only=True)   
+class ProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Progress
+        fields = ('id','image','status','detail','pr')

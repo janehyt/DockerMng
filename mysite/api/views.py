@@ -84,7 +84,7 @@ class UserViewSet(viewsets.ModelViewSet):
     # @permission_classes(IsAuthenticated)
     # def list(self,request):
     #     pass
-class ContainerViewSet(viewsets.ModelViewSet):
+class ContainerViewSet(viewsets.ViewSet):
 
     queryset = Container.objects.all().order_by('-created')
     serializer_class = ContainerSerializer
@@ -114,7 +114,7 @@ class ContainerViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         # queryset = Container.objects.all()
         data = get_object_or_404(self.queryset, pk=pk,user=request.user)
-        print self.get_serializer(data).data
+        # print self.get_serializer(data).data
         cli = DockerClient().getClient()
         try:
             container = cli.inspect_container(data.name)
@@ -124,8 +124,8 @@ class ContainerViewSet(viewsets.ModelViewSet):
             container['url'] = "http://"+request.get_host()+request.path
             return Response(container)
 
-    def update(self,request,pk=None):
-        return Response({"detail":"PUT method forbidden"},status=403)
+    # def update(self,request,pk=None):
+    #     return Response({"detail":"PUT method forbidden"},status=403)
     
     def destroy(self,request,pk=None):
         data = get_object_or_404(self.queryset, pk=pk,user=request.user)
@@ -139,20 +139,26 @@ class ContainerViewSet(viewsets.ModelViewSet):
             else:
                 return Response({"reason":e.response.reason,
                     "detail":e.explanation},status=e.response.status_code)
+        v_dir = files.getUploadDir(str(request.user))
+        v_dir = os.path.join(v_dir,data.name)
         data.delete()
+        files.removeDirs(v_dir)
+
         
-        return Response(self.get_serializer(data).data)
+        return Response(ContainerSerializer(data).data)
 
     def create(self,request):
         data = request.data
         nameFilter = Container.objects.filter(name=data.get('name'))     
-        if(nameFilter):
-            return Response("容器名已存在",status=406)
+        # if nameFilter:
+        #     return Response("容器名已存在",status=406)
         user = request.user
         data['user'] = user.id
-        serializer = self.get_serializer(data=data)
-        res = Response({"detail":"参数不符合要求"},status=406)
+        if data.get('volumes'):
+            data['volumes'] = files.resolveVolumes(volumes=data.get('volumes'),path=str(user),name=data.get('name'))
+        serializer = ContainerSerializer(data=data)
         if serializer.is_valid():
+            print "ok"
             valid_data = serializer.data
             valid_data['user'] = user
             repo = valid_data.get('image')
@@ -171,8 +177,19 @@ class ContainerViewSet(viewsets.ModelViewSet):
                 valid_data['image']=image
                 container = Container(**valid_data)
                 container.save()
-                res = Response(self.get_serializer(container).data)
+                data={"id":container.id,"to_pull":container.to_pull()}
+                res = Response(data)
+        else:
+            res = Response(serializer.errors,status=406)
         return res
+    @list_route()
+    def names(self,request):
+        queryset = Container.objects.filter(user=request.user)
+        data=[]
+        for c in queryset:
+            data.append(c.name)
+        return Response(data)
+
     @detail_route()
     def progress(self,request,pk=None):
         container = get_object_or_404(self.queryset, pk=pk,user=request.user)
@@ -219,9 +236,13 @@ class ContainerViewSet(viewsets.ModelViewSet):
     def run(self,request,pk=None):
         container = get_object_or_404(self.queryset, pk=pk,user=request.user)
         cli = DockerClient().getClient()
-        # data = self.get_serializer(container).data
-        # data = "To Run"
         data={}
+        print DockerClient().getHostConfig(
+                    volumes=container.volumes,
+                    links=container.links,
+                    ports=container.ports,
+                    restart=container.restart
+                )
         if container.to_run():
             host_config =  DockerClient().getHostConfig(
                     volumes=container.volumes,
@@ -231,17 +252,17 @@ class ContainerViewSet(viewsets.ModelViewSet):
                 )
             # print host_config
             command = container.command
-            print len(command)
-            if(len(command)>0):
-                print command
-                data=cli.create_container(name=container.name,image=str(container.image),
-                environment=container.envs.split(","),command=command,
-                host_config=host_config,detach=True)
-            else:
-                print 'no command'
-                data=cli.create_container(name=container.name,image=str(container.image),
-                environment=container.envs.split(","),
-                host_config=host_config,detach=True)
+            params={"name":container.name,"image":str(container.image),
+            "host_config":host_config,"detach":True}
+            if len(container.command)>0:
+                params["command"]=container.command.split(",")
+            if len(container.envs)>0:
+                params["envs"]=container.envs.split(",")
+            if len(container.ports)>0:
+                ports=container.ports
+                ports = ports.replace(":","")
+                params['ports']=ports.split(",")
+            data = cli.create_container(**params)
             if data.get("Id"):
                 container.status=Container.EXISTED
                 container.save()
@@ -256,9 +277,9 @@ class ContainerViewSet(viewsets.ModelViewSet):
 
     @detail_route()
     def stop(self,request,pk=None):
-        container = self.get_object()
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
         cli = DockerClient().getClient()
-        data = self.get_serializer(container).data
+        data = ContainerSerializer(container).data
         if container.status==Container.EXISTED:
             data=cli.stop(container.name)
         # print data

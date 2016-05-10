@@ -78,8 +78,12 @@ angular.module('app')
               //   template: '<div ui-view class="fade-in-up"></div>'
               // })
               .state('app.applications', {
-                  url: '/list',
+                  url: '/applications',
                   templateUrl: 'app/views/applications_list.html'
+              })
+              .state('app.publish',{
+                  url:'/publish/:namespace/:name/:tag',
+                  templateUrl:'app/views/application_create.html'
               })
               .state('app.repos', {
                   url: '/repos?page&page_size',

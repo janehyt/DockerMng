@@ -30,7 +30,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 class ContainerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Container
-        fields = ('id','name','user','image','command','ports','volumes',
+        fields = ('id','name','user','status','image','command','ports','volumes',
             'links','envs','restart','created','updated')
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)

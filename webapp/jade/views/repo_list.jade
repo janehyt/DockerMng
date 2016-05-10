@@ -26,7 +26,7 @@ div(ng-controller="RepoListCtrl")
 										tr(ng-repeat="item in repos.results")
 											td
 												//- img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
-												| {{(isOfficial(item.namespace)?'':(item.namespace+'/'))+item.name}}
+												| {{item.namespace|filterOfficial}} {{item.name}}
 											td {{item.last_updated|time}}
 											td {{item.star_count|largeNumber}}
 											td {{item.pull_count|largeNumber}}
@@ -59,7 +59,6 @@ div(ng-controller="RepoListCtrl")
 											td
 												//- img(ng-src="http://hub.docker.com/public/images/official/{{item.name}}.png")
 												| {{item.repo_name}}
-										
 											td {{item.star_count|largeNumber}}
 											td {{item.pull_count|largeNumber}}
 											//- td {{item.description}}

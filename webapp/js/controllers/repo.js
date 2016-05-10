@@ -18,9 +18,9 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 		$state.go('app.repos',params);
 	}
 	
-	$scope.isOfficial=function(namespace){
-		return namespace=="library"?true:false
-	}
+	// $scope.isOfficial=function(namespace){
+	// 	return namespace=="library"?true:false
+	// }
 	$scope.detail=function(name){
 		if(name.indexOf("/")!=-1){
 			var list = name.split("/");
@@ -59,7 +59,8 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 	
 
 }]);
-app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce',function($scope,$http,$state,$sce){
+app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce','filterOfficialFilter',
+	function($scope,$http,$state,$sce,filterOfficial){
 
 
 	$scope.loadData=function(){	
@@ -92,18 +93,21 @@ app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce',function($scop
 	$scope.loadHtmlData=function(data){
 		return $sce.trustAsHtml($scope.data.full_description);
 	}
-	$scope.isOfficial=function(namespace){
-		return namespace=="library"?true:false
-	}
+	// $scope.isOfficial=function(namespace){
+	// 	return namespace=="library"?true:false
+	// }
 	
 	$scope.publish=function(data){
-		var detail = $scope.name+":"+data
-		console.info(detail);
+		// var detail = $scope.name+":"+data
+		var params=$state.params;
+		params.tag=data;
+		console.info(params);
+		$state.go('app.publish',params)
+		
 	}
 
 	$scope.title="镜像仓库";
-	$scope.name=($scope.isOfficial($state.params.namespace)?"":$state.params.namespace+"/")+
-			$state.params.name
+	$scope.name=filterOfficial($state.params.namespace)+$state.params.name
 	$scope.data={full_description:"",last_updated:"",pull_count:0};
 	$scope.tags={}
 	

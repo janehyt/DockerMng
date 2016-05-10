@@ -34,14 +34,15 @@ class DockerClient(object):
 		if len(volumes)>0:
 			host_config['Binds']=volumes.split(",")
 		if len(links)>0:
-			host_config['Links'] = volumes.split(",")
+			host_config['Links'] = links.split(",")
 		if len(ports)>0:
 			ports = ports.split(",")
 			port_bind={}
 			for p in ports:
-				ex = str(p)+"/tcp"
-				de = getPort()
-				port_bind[ex]=[{"HostPort":str(de)}]
+				if ":" in p:
+					ex = p[0:len(p)-1]+"/tcp"
+					de = getPort()
+					port_bind[ex]=[{"HostPort":str(de)}]
 			host_config['PortBindings']=port_bind
 		if restart:
 			host_config["RestartPolicy"] = { "Name": "always" }

@@ -1,0 +1,167 @@
+div(ng-controller="ApplicationCreateCtrl")
+	.bg-light.lter.b-b.wrapper-md
+		a(ui-sref="app.repo({namespace:$state.params.namespace,name:$state.params.name})").m-n.font-thin.h3
+			i.fa.fa-arrow-left
+			|  {{title}}
+		//- h1.m-n.font-thin.h3 {{title}}
+	.wrapper-md
+		
+		.panel
+			.panel-heading.bg-dark
+				.h2.text-lt 创建应用
+				.row.wrapper
+					.col-sm-6.text-lt 所属镜像
+						strong {{title}}
+						span
+							i.fa.fa-tag.fa-fw.m-r-xs
+							strong {{$state.params.tag}}
+					//- .col-sm-2.text-lt 拉取数: {{data.pull_count|largeNumber}}
+				span.wrapper
+					a.btn.btn-primary.btn-sm(ui-sref="app.repos") 重选镜像
+				
+			.panel-body
+				form.form-horizontal.form-validation(name="CreateForm")
+					.form-group
+						label.col-sm-2.control-label 应用名称
+						.col-sm-8
+							input.form-control(type="text",required="true",ng-model="container.name",placeholder="请输入应用名称，不能为空")
+						.text-danger.help-block *
+					.form-group
+						label.col-sm-2.control-label 启动命令
+						.col-sm-8
+							input.form-control(type="text",ng-model="container.command",placeholder="请输入启动命令，多个命令用','隔开")
+					.form-group
+						label.col-sm-2.control-label 自动重启
+						.col-sm-4
+							label.i-switch.m-t-xs.m-r
+								input(type="checkbox",ng-model="container.restart")
+								i
+
+					.line.b-b.line-lg.pull-in
+					.form-group
+						label.col-sm-2.control-label 开放端口
+						.col-sm-4
+							.input-group
+								input.form-control(type="number",ng-model="port.value",name="port",min="1",max="65534",placeholder="端口号(1-65534)")
+								span.input-group-btn
+									button.btn.btn-default(type="button",ng-disabled="port.invalid()",ng-click="port.add()") 添加端口
+						
+							span.help-block 添加的端口均为tcp协议，默认可内部访问，可允许外部访问（将自动分配外部端口）
+						.col-sm-4
+							.table-responsive
+								table.table
+									thead
+										th 容器端口
+										th 外部访问
+										th
+											span
+												i.fa.fa-trash
+									tbody
+										tr(ng-repeat="p in port.list")
+											td {{p.value}}/tcp
+											td
+												label.i-switch.m-t-xs.m-r
+													input(type="checkbox",ng-model="p.external")
+													i
+											td
+												a.m-n.text-danger(ng-click="port.remove(p.value)")
+													i.fa.fa-trash
+					.line.b-b.line-lg.pull-in
+					.form-group
+						label.col-sm-2.control-label 环境变量
+						.col-sm-8
+							.input-group
+								input.form-control(type="text",ng-model="env.key",placeholder="键")
+								span.input-group-addon =
+								input.form-control(type="text",ng-model="env.value",placeholder="值")
+								span.input-group-btn
+									button.btn.btn-default(type="button",ng-disabled="env.invalid()",ng-click="env.add()") 添加
+							span.help-block 环境变量要求键唯一
+							.table-responsive
+								table.table
+									thead
+										th 键
+										th 值
+										th
+											span
+												i.fa.fa-trash
+									tbody
+										tr(ng-repeat="e in env.list")
+											td {{e.key}}
+											td {{e.value}}
+											td
+												a.m-n.text-danger(ng-click="env.remove(e.key)")
+													i.fa.fa-trash
+
+					.line.b-b.line-lg.pull-in
+					.form-group
+						label.col-sm-2.control-label 应用绑定
+						.col-sm-8
+							.input-group
+								select.form-control(ng-model="link.value")
+									option(ng-repeat="o in link.options") {{o}}
+								span.input-group-addon :
+								input.form-control(type="text",ng-model="link.key",placeholder="绑定别名")
+								span.input-group-btn
+									button.btn.btn-default(type="button",ng-disabled="link.invalid()",ng-click="link.add()") 添加
+							span.help-block 应用绑定要求别名唯一
+							.table-responsive
+								table.table
+									thead
+										th 容器名称
+										th 绑定别名
+										th
+											span
+												i.fa.fa-trash
+									tbody
+										tr(ng-repeat="e in link.list")
+											td {{e.value}}
+											td {{e.key}}
+											td
+												a.m-n.text-danger(ng-click="link.remove(e.key)")
+													i.fa.fa-trash
+					.line.b-b.line-lg.pull-in
+					.form-group
+						label.col-sm-2.control-label Volume挂载
+						.col-sm-8
+							tabset.tab-container
+								tab
+									tab-heading 路径绑定
+									span.help-block 主机路径须以'/'开头则为绝对路径，否则默认为容器目录的相对路径(容器目录自动生成)
+									.input-group
+										input.form-control(type="text",ng-model="volume.host",placeholder="请输入主机路径")
+										span.input-group-addon :
+										input.form-control(type="text",ng-model="volume.path",placeholder="请输入容器路径(必须为绝对路径)")
+										span.input-group-btn
+											button.btn.btn-default(type="button",ng-disabled="volume.invalidPath()",ng-click="volume.add(volume.host,volume.path)") 添加
+								tab
+									tab-heading 文件绑定
+									span.help-block 仅可选择已上传文件，若为zip，则自动解压到容器目录下再挂载，否则拷贝到容器目录下挂载
+									.input-group
+										select.form-control(type="text",ng-model="volume.select")
+											option(ng-repeat="o in volume.options") {{o.name}}
+										span.input-group-addon :
+										input.form-control(type="text",ng-model="volume.value",placeholder="请输入容器路径(必须为绝对路径)")
+										span.input-group-btn
+											button.btn.btn-default(type="button",ng-disabled="volume.invalidFile()",ng-click="volume.add(volume.select,volume.value)") 添加
+							span.help-block 容器路径唯一				
+							.table-responsive
+								table.table
+									thead
+										th Volume
+										th 容器路径
+										th
+											span
+												i.fa.fa-trash
+									tbody
+										tr(ng-repeat="e in volume.list")
+											td {{e.value}}
+											td {{e.key}}
+											td
+												a.m-n.text-danger(ng-click="volume.remove(e.key)")
+													i.fa.fa-trash
+
+						
+			footer.panel-footer.text-right.bg-light.lter
+				button.btn.btn-default(ng-disabled="CreateForm.$invalid",ng-click="publish()") 部署应用
+				

@@ -65,4 +65,10 @@ angular.module('app')
 			return (data/1000).toFixed(1)+"K";
 		return data;
  	}
+ }).filter('filterOfficial',function(){
+ 	return function(namespace){
+ 		if(namespace=='library')
+ 			return '';
+ 		return namespace+"/";
+ 	}
  })

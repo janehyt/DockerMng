@@ -47,11 +47,11 @@ class Container(models.Model):
 	status = models.CharField(max_length=2,
 		choices=STATUS_CHOICES,
 		default=CREATING)
-	command = models.CharField(max_length = 150,default="")
-	ports = models.CharField(max_length = 150,default="")
-	volumes = models.CharField(max_length = 150,default="")
-	links = models.CharField(max_length = 150,default="")
-	envs = models.CharField(max_length = 150,default="")
+	command = models.CharField(max_length = 150,default="",blank=True)
+	ports = models.CharField(max_length = 150,default="",blank=True)
+	volumes = models.CharField(max_length = 150,default="",blank=True)
+	links = models.CharField(max_length = 150,default="",blank=True)
+	envs = models.CharField(max_length = 150,default="",blank=True)
 	restart = models.BooleanField(default=False)
 	image = models.ForeignKey(Image,on_delete=models.CASCADE)
 	user = models.ForeignKey(User,on_delete=models.CASCADE,verbose_name="owner")

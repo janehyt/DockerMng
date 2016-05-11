@@ -29,26 +29,6 @@ class DockerClient(object):
 	def getInfo(self): 
 		return 	json.dumps(self.client.info())
 
-	def getHostConfig(self,volumes="",links="",ports="",restart=False):
-		host_config={}
-		if len(volumes)>0:
-			host_config['Binds']=volumes.split(",")
-		if len(links)>0:
-			host_config['Links'] = links.split(",")
-		if len(ports)>0:
-			ports = ports.split(",")
-			port_bind={}
-			for p in ports:
-				if ":" in p:
-					ex = p[0:len(p)-1]+"/tcp"
-					de = getPort()
-					port_bind[ex]=[{"HostPort":str(de)}]
-			host_config['PortBindings']=port_bind
-		if restart:
-			host_config["RestartPolicy"] = { "Name": "always" }
-		else:
-			host_config["RestartPolicy"] = { "Name": "", "MaximumRetryCount": 5 }
-		return host_config
 
 class DockerHub(object):
 	__metaclass__=Singleton

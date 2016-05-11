@@ -5,7 +5,7 @@ from .docker_client import DockerClient
 from  .models import Container,Image,Progress
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('url', 'id','username', 'password','email')
@@ -34,7 +34,9 @@ class ContainerSerializer(serializers.ModelSerializer):
             'links','envs','restart','created','updated')
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)
+    # user = serializers.IntegerField()
     image = serializers.CharField()
+    status = serializers.DictField(source='getDetailStatus', read_only=True)
     # repository = serializers.CharField(write_only=True)
     # def create(self,validated_data):
     #     repo = validated_data.get('image')
@@ -53,10 +55,10 @@ class ContainerSerializer(serializers.ModelSerializer):
     #         validated_data['image']=image[0]
     #     return Container(**validated_data)
 
-class ImageSerializer(serializers.ModelSerializer):
+class ImageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Image
-        fields = ('id','name','users','status','tag','created','updated')
+        fields = ('url','id','name','users','status','tag','created','updated')
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)
     # image = serializers.CharField(write_only=True)   

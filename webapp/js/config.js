@@ -36,9 +36,9 @@ angular.module('app')
 
     var csrftoken = getCookie('csrftoken');
     
-    $httpProvider.defaults.headers.post['X-CSRFToken'] = csrftoken;
-    $httpProvider.defaults.headers.put['X-CSRFToken'] = csrftoken;
-    // $httpProvider.defaults.headers.delete['X-CSRFToken'] = csrftoken;
+    // $httpProvider.defaults.headers.post['X-CSRFToken'] = csrftoken;
+    // $httpProvider.defaults.headers.put['X-CSRFToken'] = csrftoken;
+    $httpProvider.defaults.headers.common['X-CSRFToken'] = csrftoken;
   }])
   .config(['$translateProvider', function($translateProvider){
     // Register a loader for the static files

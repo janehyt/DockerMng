@@ -39,7 +39,7 @@ def resolveVolumes(volumes,path,name):
 		results=results[0:len(results)-1]
 	# print results
 	return results;
-
+#zip则解压，否则cp，filename为文件路径，path为目标路径
 def resolveFile(filename,path):
 	basename=os.path.basename(filename)
 	splits = os.path.splitext(basename)

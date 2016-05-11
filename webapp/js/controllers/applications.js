@@ -1,9 +1,7 @@
 app.controller('ApplicationsListCtrl',['$scope','$http','$state',function($scope,$http,$state){
 
-	$scope.title="Applications";
-	$scope.containers=[];
+	
 	$scope.loadData=function(){
-		console.log($state.includes("app.applications"))
 		$http.get("api/containers")
 			.then(function(response){
 					$scope.containers=response.data;
@@ -12,14 +10,16 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state',function($scope
 					console.info(data);
 				});
 	}
-	$scope.loadData();
+	
 	$scope.stateClass = function(status){
 		if(status=="running")
 			return "label-success"
-		else if(status=="ghost")
-			return "label-default"
-		else
+		else if(status=="existed"||status=="exited")
+			return "label-danger"
+		else if(status=="no instance"||status=="done image")
 			return "label-warning"
+		else
+			return "label-default"
 	}
 	$scope.search = function(query){
 		console.info(query);
@@ -27,6 +27,35 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state',function($scope
 	$scope.create = function(){
 		$state.go('app.repos');
 	}
+	$scope.getRepo = function(name){
+		name = name.split(":")[0];
+		var namespace="library";
+		if(name.indexOf("/")!=-1){
+			var s =name.split("/")
+			namespace=s[0];
+			name=s[1];
+		}
+		var params={
+			namespace:namespace,
+			name:name
+		}
+		$state.go('app.repo',params);
+	}
+	$scope.detail = function(){
+
+	}
+	$scope.delete=function(i){
+		$http.delete("api/containers/"+i+"/").then(
+			function(response){
+				console.info(response);
+				$scope.loadData();
+		},function(x){
+			console.info(x);
+		})
+	}
+	$scope.title="应用管理";
+	$scope.containers=[];
+	$scope.loadData();
 	
 
 }]);

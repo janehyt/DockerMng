@@ -2,9 +2,13 @@ div(ng-controller="ApplicationsListCtrl")
 	.bg-light.lter.b-b.wrapper-md
 		h1.m-n.font-thin.h3 {{title}}
 	.wrapper-md
-		.panel.panel-default
-			.panel-heading 应用列表
-			.wrapper
+		.panel
+			.panel-heading.bg-dark
+				.h2.text-lt 应用列表
+				.wrapper
+					p.text-lt 列表显示所有已配置的应用，查看详情可以进一步操作
+					p.text-lt 注：已有image的镜像创建较快，否则需要等待镜像拉取后创建，耗时较多
+			.panel-body
 				form.m-b-md(ng-submit="search(query)",name="searchForm")
 					
 					.input-group
@@ -19,25 +23,32 @@ div(ng-controller="ApplicationsListCtrl")
 					table.table.table-striped.b-t.b-light
 						thead
 							tr
-								th(style="width:20px;")
+								//- th(style="width:20px;")
 									label.i-checks.m-b-none
 										input(type="checkbox")
 										i
 								th 名称
+								th 所属镜像
 								th 创建时间
-								th 更新时间
+								//- th 更新时间
 								th 状态
 								th 操作
 						tbody
 							tr(ng-repeat="item in containers.results")
-								td
+								//- td
 									label.i-checks.m-b-none
 										input(type="checkbox",name="post[]")
 										i
 								td {{item.name}}
+								td 
+									a(ng-click="getRepo(item.image)")
+										span.label.label-primary{{item.image}}
 								td {{item.created|time}}
-								td {{item.updated|time}}
+								//- td {{item.updated|time}}
 								td
-									span.label(ng-class="stateClass(item.state.Status)") {{item.state.Status}}
+									span.label(ng-class="stateClass(item.status.detail)") {{item.status.detail}}
 								td
-									button.btn.btn-sm.btn-default(type="button",ng-hide="item.state.Status=='ghost'") 查看详情		
+									button.btn.btn-sm.btn-default(type="button",ng-click="delete(item.id)") 查看详情
+					.pull-right
+						a.btn.btn-default.btn-sm(ng-disabled="!results.previous",ng-click="loadResults(results.previous)") 上一页
+						a.btn.btn-default.btn-sm(ng-disabled="!results.next",ng-click="loadResults(results.next)") 下一页

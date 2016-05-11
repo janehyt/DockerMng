@@ -3,8 +3,8 @@ from docker import Client
 from mysite import settings as settings
 import json
 import requests
-import os
-import random
+# import os
+# import random
 
 class Singleton(type):  
     def __init__(cls, name, bases, dict):    
@@ -73,12 +73,3 @@ class DockerHub(object):
 		return result
 
 
-def getPort():
-	pscmd = "netstat -ntl |grep -v Active| grep -v Proto|awk '{print $4}'|awk -F: '{print $NF}'"
-	procs = os.popen(pscmd).read()
-	procarr = procs.split("\n")
-	tt= random.randint(10000,65534)
-	if tt not in procarr:
-		return tt
-	else:
-		getPort()

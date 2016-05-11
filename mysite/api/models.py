@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*- 
 from django.db import models
 from django.contrib.auth.models import User
+import os,random
 
 class Image(models.Model):
 	CREATING = "CR"
@@ -153,3 +154,13 @@ class Progress(models.Model):
 
 	def __unicode__(self):
 		return self.id
+
+def getPort():
+	pscmd = "netstat -ntl |grep -v Active| grep -v Proto|awk '{print $4}'|awk -F: '{print $NF}'"
+	procs = os.popen(pscmd).read()
+	procarr = procs.split("\n")
+	tt= random.randint(10000,65534)
+	if tt not in procarr:
+		return tt
+	else:
+		getPort()

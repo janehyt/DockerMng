@@ -85,11 +85,11 @@ app.controller('FileCtrl',['$scope','$http','FileUploader','$modal',
     });
 
     uploader.onCompleteItem = function(fileItem, response, status, headers) {
-        console.info('onCompleteItem', fileItem, response, status, headers);
+        // console.info('onCompleteItem', fileItem, response, status, headers);
         fileItem.remove();
+        // toaster.pop("success","上传成功");
     };
 
-    console.info('uploader', uploader);
 
     $scope.title="文件管理";
 

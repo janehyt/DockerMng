@@ -122,7 +122,13 @@ class ContainerViewSet(viewsets.ViewSet):
         data = get_object_or_404(self.queryset, pk=pk,user=request.user)
         # print self.get_serializer(data).data
         cli = DockerClient().getClient()
-        container = ContainerSerializer(data,context={'request':request}).data
+        container = {
+            "id":data.id,
+            "name":data.name,
+            "status":data.getDetailStatus(),
+            "config":data.getFullConfig(),
+            "created":data.created
+        }
         if container["status"]["code"]==0:
             try:
                 container["inspect"] = cli.inspect_container(data.name)
@@ -267,32 +273,39 @@ class ContainerViewSet(viewsets.ViewSet):
     @detail_route()
     def pull_image(self,request,pk=None):
         container = get_object_or_404(self.queryset, pk=pk,user=request.user)
-        cli = DockerClient().getClient()
+        
         st = container.getDetailStatus()
-
         if st['code']==1 or st['code']==2:
             image = container.image
             # 拉取镜像
-            ps = image.progresses.all().delete()
-            pull_image = cli.pull(str(image),stream=True)
             image.status = Image.PULLING
             image.save()
-            for line in pull_image:
-                pr = json.loads(line)
-                status = pr.get("status")
-                p_id=pr.get("id","")
-                #保存状态
-                if "Pulling from" not in status and len(p_id)==12:
-                    progress = Progress.objects.get_or_create(image=image,pid=p_id)[0]
-                    progress.status=status
-                    detail = pr.get("progressDetail")
-                    if detail:
-                        progress.detail=json.dumps(detail)
-                        progress.pr = pr.get("progress")
-                    progress.save()
-            image.status=Image.EXISTED
-            image.save()
             ps = image.progresses.all().delete()
+            try:
+                cli = DockerClient().getClient()
+                pull_image = cli.pull(str(image),stream=True)
+                
+                for line in pull_image:
+                    pr = json.loads(line)
+                    status = pr.get("status")
+                    p_id=pr.get("id","")
+                    #保存状态
+                    if "Pulling from" not in status and len(p_id)==12:
+                        progress = Progress.objects.get_or_create(image=image,pid=p_id)[0]
+                        progress.status=status
+                        detail = pr.get("progressDetail")
+                        if detail:
+                            progress.detail=json.dumps(detail)
+                            progress.pr = pr.get("progress")
+                        progress.save()
+                image.status=Image.EXISTED
+                image.save()
+                ps = image.progresses.all().delete()
+            except errors.APIError e:
+                image.status=Image.ERROR
+                image.save()
+                return Response({"reason":e.response.reason,
+                    "detail":e.explanation},status=e.response.status_code)
             # print image.status
             # return Response("/api/containers/"+pk+"/progress",status=307)
         #镜像拉取结束后重定向启动应用

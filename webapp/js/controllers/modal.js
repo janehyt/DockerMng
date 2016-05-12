@@ -35,3 +35,16 @@ app.controller('ModalDelCtrl',['$scope','$modalInstance','name',
     };
 
   }]);
+
+app.controller('ModalConCtrl',['$scope','$modalInstance',
+  function($scope,$modalInstance){
+    
+    $scope.ok = function () {
+      $modalInstance.close();
+    };
+
+    $scope.cancel = function () {
+      $modalInstance.dismiss('cancel');
+    };
+
+  }]);

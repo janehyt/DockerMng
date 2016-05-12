@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*- 
 from django.db import models
 from django.contrib.auth.models import User
+from . import files
 import os,random,json
 
 class Image(models.Model):
@@ -81,25 +82,75 @@ class Container(models.Model):
 		return self.name
 	def __getitem__(self):
 		return self.name
-	# def to_pull(self):
-	# 	image = self.image
-	# 	if self.status==Container.CREATING:
-	# 		return image.to_start_pull()
-	# 	return False
-	# def is_pulling(self):
-	# 	image = self.image
-	# 	if self.status==Container.CREATING:
-	# 		return image.is_pulling()
-	# 	return False
-	# def is_existed(self):
-	# 	return self.status==Container.EXISTED
-	# def to_run(self):
-	# 	image = self.image
-	# 	if self.status==Container.CREATING:
-	# 		return image.is_existed()
-	# 	return False
 	def get_absolute_url(self):
 		return "/"+self.id
+	
+	def getFullConfig(self):
+		params={
+			"image":{
+				"name":self.image.name,
+				"tag":self.image.tag,
+				"namespace":"library"
+			},
+			"command":[],
+			"ports":{},
+			"volumes":{},
+			"links":{},
+			"envs":{},
+			"restart":self.restart,
+		}
+		if "/" in self.image.name:
+			name = self.image.name.split("/")
+			params["image"]["namespace"]=name[0]
+			params["image"]["name"]=name[1]
+		if len(self.command)>0:
+			params['command'] = self.command.split(",")
+		if len(self.ports)>0:
+			tmp={}
+			ports=self.ports.split(",")
+			for port in ports:
+				if ":" in port:
+					p =port.split(":")
+					tmp[p[0]]={"key":p[0],"value":True}
+				else:
+					tmp[port]={"key":port,"value":False}
+			params['ports']=tmp
+		if len(self.volumes)>0:
+			tmp={}
+			volumes=self.volumes.split(",")
+			path = self.getBaseDir()
+			for volume in volumes:
+				if ":" in volume:
+					v =volume.split(":")
+					if v[0].startswith(path):
+						v[0]=v[0][len(path)+1:]
+					tmp[v[1]]={"value":v[0],"key":v[1]}
+			params['volumes']=tmp
+		if len(self.links)>0:
+			tmp={}
+			links=self.links.split(",")
+			for link in links:
+				if ":" in link:
+					l =link.split(":")
+					l_c = Container.objects.filter(name=l[0])
+					if(l_c[0]):
+						tmp[l[1]]={"value":l[0],"key":l[1],"id":l_c[0].id}
+			params['links']=tmp
+		if len(self.envs)>0:
+			tmp={}
+			envs=self.envs.split(",")
+			for env in envs:
+				if "=" in env:
+					e =env.split("=")
+					tmp[e[0]]={"key":e[0],"value":e[1]}
+			params['envs']=tmp
+		return params
+
+	def getBaseDir(self):
+		path = files.getUploadDir(str(self.user))
+		path = os.path.join(path,self.name)
+		return path
+
 	def getDetailStatus(self):
 		result={}
 		if self.status==Container.CREATING:

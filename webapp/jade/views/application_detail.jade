@@ -32,7 +32,99 @@ div(ng-controller="ApplicationDetailCtrl")
 				tabset.tab-container
 					tab()
 						tab-heading 配置
-						
+						form.form-horizontal
+							.form-group
+								label.col-sm-2.control-label 所属镜像
+								.col-sm-8
+									p.form-control-static
+										a(ui-sref="app.repo({namespace:data.config.image.namespace,name:data.config.image.name})")
+											span.label.label-primary {{data.config.image.namespace|filterOfficial}}{{data.config.image.name}}
+										span
+											i.fa.fa-tag.fa-fw.m-r-xs
+											| {{data.config.image.tag}}
+							.form-group
+								label.col-sm-2.control-label 启动命令
+								.col-sm-8
+									p.form-control-static
+										span.label.label-info(ng-repeat="c in data.config.command") {{c}}
+										strong.text-danger(ng-if="empty(data.config.command)") 未自定义启动命令
+							.form-group
+								label.col-sm-2.control-label 自动重启
+								.col-sm-8
+									p.form-control-static
+										span.text-success(ng-if="data.config.restart")
+											i.glyphicon.glyphicon-ok
+										span.text-danger(ng-if="!data.config.restart")
+											i.glyphicon.glyphicon-remove
+									
+							
+							.line.b-b.line-lg.pull-in
+							.form-group
+								label.col-sm-2.control-label 开放端口
+								.col-sm-8
+									.table-responsive
+										table.table
+											thead
+												th 容器端口
+												th 外部访问
+											tbody
+												tr(ng-repeat="p in data.config.ports")
+													td {{p.key}}/tcp
+													td
+														span.text-success(ng-if="p.value")
+															i.glyphicon.glyphicon-ok
+														span.text-danger(ng-if="!p.value")
+															i.glyphicon.glyphicon-remove
+										p.text-center.text-danger(ng-if="empty(data.config.ports)")
+											strong 未自定义开放端口
+							.line.b-b.line-lg.pull-in
+							.form-group
+								label.col-sm-2.control-label 环境变量
+								.col-sm-8
+									.table-responsive
+										table.table
+											thead
+												th 键
+												th 值
+											tbody
+												tr(ng-repeat="e in data.config.envs")
+													td {{e.key}}
+													td {{e.value}}
+										p.text-center.text-danger(ng-if="empty(data.config.envs)")
+											strong 未自定义环境变量
+							.line.b-b.line-lg.pull-in
+							.form-group
+								label.col-sm-2.control-label 应用绑定
+								.col-sm-8
+									.table-responsive
+										table.table
+											thead
+												th 应用名称
+												th 绑定别名
+											tbody
+												tr(ng-repeat="l in data.config.links")
+													td
+														a(ui-sref="app.application({id:l.id})")
+															span.label.label-primary {{l.value}}
+													td {{l.key}}
+										p.text-center.text-danger(ng-if="empty(data.config.links)")
+											strong 未自定义应用绑定
+							.line.b-b.line-lg.pull-in
+							.form-group
+								label.col-sm-2.control-label Volume挂载
+								.col-sm-8
+									span.help-block 主机路径以'/'开头表示绝对路径，否则为容器目录的相对路径
+									.table-responsive
+										table.table
+											thead
+												th 主机路径
+												th 容器路径
+											tbody
+												tr(ng-repeat="v in data.config.volumes")
+													td {{v.value}}
+													td {{v.key}}
+										p.text-center.text-danger(ng-if="empty(data.config.volumes)")
+											strong 未自定义Volume挂载
 					tab(ng-if="data.inspect")
 						tab-heading 详情
 						.wrapper

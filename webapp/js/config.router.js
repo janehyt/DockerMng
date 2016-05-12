@@ -79,15 +79,33 @@ angular.module('app')
               // })
               .state('app.applications', {
                   url: '/applications',
-                  templateUrl: 'app/views/applications_list.html'
+                  templateUrl: 'app/views/applications_list.html',
+                  resolve: {
+                      deps: ['$ocLazyLoad',
+                        function( $ocLazyLoad){
+                          return $ocLazyLoad.load('toaster');
+                      }]
+                  }
               })
               .state('app.application',{
                   url:'/application/:id',
-                  templateUrl:'app/views/application_detail.html'
+                  templateUrl:'app/views/application_detail.html',
+                  resolve: {
+                      deps: ['$ocLazyLoad',
+                        function( $ocLazyLoad){
+                          return $ocLazyLoad.load('toaster');
+                      }]
+                  }
               })
               .state('app.publish',{
                   url:'/publish/:namespace/:name/:tag',
-                  templateUrl:'app/views/application_create.html'
+                  templateUrl:'app/views/application_create.html',
+                  resolve: {
+                      deps: ['$ocLazyLoad',
+                        function( $ocLazyLoad){
+                          return $ocLazyLoad.load('toaster');
+                      }]
+                  }
               })
               .state('app.repos', {
                   url: '/repos?page&page_size',

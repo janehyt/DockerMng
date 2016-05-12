@@ -13,7 +13,14 @@ angular.module('app')
                   files: [
                     'app/vendor/modules/angular-file-upload/angular-file-upload.min.js'
                   ]
-              }
+              },
+              {
+                  name: 'toaster',
+                  files: [
+                      'app/vendor/modules/angularjs-toaster/toaster.js',
+                      'app/vendor/modules/angularjs-toaster/toaster.css'
+                  ]
+              },
               // {
               //     name: 'ngGrid',
               //     files: [

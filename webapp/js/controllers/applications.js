@@ -1,5 +1,5 @@
-app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal',
-	function($scope,$http,$state,$modal){
+app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toaster',
+	function($scope,$http,$state,$modal,toaster){
 
 	
 	$scope.loadData=function(){
@@ -7,8 +7,9 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal',
 			.then(function(response){
 					$scope.containers=response.data;
 					console.info($scope.containers);
-				},function(response){
-					console.info(data);
+				},function(x){
+					console.info(x);
+					// toaster.pop("danger",x.status,x.data);
 				});
 	}
 	
@@ -63,11 +64,13 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal',
 				function(response){
 					console.info(response);
 					$scope.loadData();
+					toaster.pop("success","删除成功","应用"+item.name+"已成功移除！")
 			},function(x){
 				console.info(x);
+				toaster.pop("danger",x.status,x.data)
 			})
 		},function(){
-		console.info("dismiss");
+			console.info("dismiss");
 		})
 
 		
@@ -78,20 +81,23 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal',
 			function(response){
 				console.info(response);
 				$scope.loadData();
+				toaster.pop("success",a.name,"操作成功");
 			},
 			function(x){
 				console.info(x);
+				toaster.pop("danger",x.status,x.data);
 			}
 		)
 	}
+
 	$scope.title="应用管理";
 	$scope.containers=[];
 	$scope.loadData();
 	
 
 }]);
-app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficialFilter',
-	function($scope,$http,$state,filterOfficial){
+app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficialFilter','toaster','$modal',
+	function($scope,$http,$state,filterOfficial,toaster,$modal){
 		$scope.init=function(){
 			$scope.title=filterOfficial($state.params.namespace)+
 				$state.params.name;
@@ -123,17 +129,32 @@ app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficia
 				});
 		}
 
+		$scope.confirm=function(){
+			var modalIns = $modal.open({
+				templateUrl: 'app/views/template/confirm.html',
+				controller: 'ModalConCtrl'
+			});
+			modalIns.result.then(function(){
+			// var params = {filename:name,newname:data}
+				$scope.publish();
+			},function(){
+				console.info("dismiss");
+			})
+
+		}
+
 		$scope.publish=function(){
 			$scope.container.ports=$scope.port.toString();
 			$scope.container.envs = $scope.env.toString();
 			$scope.container.links=$scope.link.toString();
 			$scope.container.volumes = $scope.volume.toString();
-			console.info($scope.container);
+			// console.info($scope.container);
 			$http.post("api/containers/",$scope.container).then(
 				function(response){
 					console.info(response);
 					var id = response.data.id;
 					if(id){
+						toaster.pop("success","部署成功","已成功配置应用！");
 						$state.go("app.application",{id:id});
 					}
 				},function(x){
@@ -318,10 +339,16 @@ app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficia
 
 }]);
 
-app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$modal',
-	function($scope,$http,$state,$timeout,$modal){
+app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$modal','toaster',
+	function($scope,$http,$state,$timeout,$modal,toaster){
 
-
+	$scope.empty=function(data){
+		if(data){
+			for(var d in data)
+				return false;
+		}
+		return true
+	}
 	$scope.loadData=function(){	
 		$http.get($scope.url).then(
 			function(response){
@@ -384,10 +411,12 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 			$http.delete($scope.url).then(
 				function(response){
 					console.info(response.data);
+					toaster.pop("success","删除成功","应用"+$scope.name+"已成功移除！");
 					$state.go("app.applications");
 				},
 				function(x){
 					console.info(x);
+					toaster.pop("danger",x.status,x.data);
 				}
 			);
 		},function(){
@@ -401,9 +430,11 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 			function(response){
 				console.info(response.data);
 				$scope.loadData();
+				toaster.pop("success",a.name,"操作成功");
 			},
 			function(x){
 				console.info(x);
+				toaster.pop("danger",x.status,x.data);
 			}
 		);
 	}

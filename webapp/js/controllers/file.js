@@ -13,7 +13,7 @@ app.controller('FileCtrl',['$scope','$http','FileUploader','$modal',
     }
     $scope.rename = function(name){
       var modalIns = $modal.open({
-        templateUrl: 'rename.html',
+        templateUrl: 'app/views/template/rename.html',
         controller: 'ModalInsCtrl',
         resolve:{
           name:function(){
@@ -22,13 +22,42 @@ app.controller('FileCtrl',['$scope','$http','FileUploader','$modal',
         }
       });
       modalIns.result.then(function(data){
-        console.info(name,data);
+        // var params = {filename:name,newname:data}
+        $http.get("api/files/rename/?filename="+name+"&newname="+data).then(
+          function(response){
+            console.info(response);
+            $scope.loadFiles();
+          }
+        ),function(x){
+          console.info(x);
+        }
       },function(){
         console.info("dismiss");
       })
     }
     $scope.remove = function(name){
-      console.info("remove");
+      var modalIns = $modal.open({
+        templateUrl: 'app/views/template/delete.html',
+        controller: 'ModalDelCtrl',
+        resolve:{
+          name:function(){
+            return name;
+          }
+        }
+      });
+      modalIns.result.then(function(){
+        // var params = {filename:name,newname:data}
+        $http.get("api/files/remove/?filename="+name).then(
+          function(response){
+            console.info(response);
+            $scope.loadFiles();
+          },function(x){
+            console.info(x);
+          }
+        )
+      },function(){
+        console.info("dismiss");
+      })
     }
 	  
     function getCookie(name) {
@@ -55,50 +84,10 @@ app.controller('FileCtrl',['$scope','$http','FileUploader','$modal',
         // method:'PUT'
     });
 
-    // // FILTERS
-
-    // uploader.filters.push({
-    //     name: 'customFilter',
-    //     fn: function(item {File|FileLikeObject}, options) {
-    //         return this.queue.length < 10;
-    //     }
-    // });
-
-    // CALLBACKS
-
-    // uploader.onWhenAddingFileFailed = function(item /*{File|FileLikeObject}*/, filter, options) {
-    //     console.info('onWhenAddingFileFailed', item, filter, options);
-    // };
-    // uploader.onAfterAddingFile = function(fileItem) {
-    //     console.info('onAfterAddingFile', fileItem);
-    // };
-    // uploader.onAfterAddingAll = function(addedFileItems) {
-    //     console.info('onAfterAddingAll', addedFileItems);
-    // };
-    // uploader.onBeforeUploadItem = function(item) {
-    //     console.info('onBeforeUploadItem', item);
-    // };
-    uploader.onProgressItem = function(fileItem, progress) {
-        console.info('onProgressItem', fileItem, progress);
+    uploader.onCompleteItem = function(fileItem, response, status, headers) {
+        console.info('onCompleteItem', fileItem, response, status, headers);
+        fileItem.remove();
     };
-    // uploader.onProgressAll = function(progress) {
-    //     console.info('onProgressAll', progress);
-    // };
-    // uploader.onSuccessItem = function(fileItem, response, status, headers) {
-    //     console.info('onSuccessItem', fileItem, response, status, headers);
-    // };
-    // uploader.onErrorItem = function(fileItem, response, status, headers) {
-    //     console.info('onErrorItem', fileItem, response, status, headers);
-    // };
-    // uploader.onCancelItem = function(fileItem, response, status, headers) {
-    //     console.info('onCancelItem', fileItem, response, status, headers);
-    // };
-    // uploader.onCompleteItem = function(fileItem, response, status, headers) {
-    //     console.info('onCompleteItem', fileItem, response, status, headers);
-    // };
-    // uploader.onCompleteAll = function() {
-    //     console.info('onCompleteAll');
-    // };
 
     console.info('uploader', uploader);
 
@@ -108,27 +97,3 @@ app.controller('FileCtrl',['$scope','$http','FileUploader','$modal',
 	
 
 }]);
-app.controller('ModalInsCtrl',['$scope','$modalInstance','name',
-  function($scope,$modalInstance,name){
-    $scope.item = {name:"",suffix:""};
-    $scope.init=function(){
-      if(name){
-        var index = name.indexOf(".")
-        if(index!=-1){
-          $scope.item.name=name.substring(0,index);
-          $scope.item.suffix=name.substring(index);
-        }
-      }
-      
-      
-    }
-    $scope.ok = function () {
-      $modalInstance.close($scope.rename+$scope.item.suffix);
-    };
-
-    $scope.cancel = function () {
-      $modalInstance.dismiss('cancel');
-    };
-    $scope.init();
-
-  }]);

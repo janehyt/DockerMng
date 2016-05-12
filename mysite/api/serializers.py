@@ -65,4 +65,5 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 class ProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Progress
-        fields = ('id','image','status','detail','pr')
+        fields = ('pid','image','status','detail','pr')
+    detail = serializers.DictField(source="getDetail",read_only=True)

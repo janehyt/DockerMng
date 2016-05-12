@@ -11,10 +11,11 @@ div(ng-controller="ApplicationCreateCtrl")
 				.h2.text-lt 创建应用
 				.row.wrapper
 					.col-sm-6.text-lt 所属镜像
-						strong {{title}}
+						a(ui-sref="app.repo({namespace:$state.params.namespace,name:$state.params.name})")
+							span.label.label-primary {{title}}
 						span
 							i.fa.fa-tag.fa-fw.m-r-xs
-							strong {{$state.params.tag}}
+							|{{$state.params.tag}}
 					//- .col-sm-2.text-lt 拉取数: {{data.pull_count|largeNumber}}
 				span.wrapper
 					a.btn.btn-primary.btn-sm(ui-sref="app.repos") 重选镜像

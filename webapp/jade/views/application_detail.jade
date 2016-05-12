@@ -1,0 +1,42 @@
+div(ng-controller="ApplicationDetailCtrl")
+	.bg-light.lter.b-b.wrapper-md
+		a(ui-sref="app.applications").m-n.font-thin.h3
+			i.fa.fa-arrow-left
+			|  {{title}}
+		//- h1.m-n.font-thin.h3 {{title}}
+	.wrapper-md
+		
+		.panel
+			.panel-heading.bg-dark
+				.h2.text-lt {{name}}
+				.row.wrapper
+					//- .col-sm-2.text-lt 部署于: {{data.updated|time}}
+					.col-sm-4.text-lt 创建于: 
+						span.label.label-info {{data.created|time}}
+					.col-sm-4.text-lt 状态: 
+						span.label(ng-class="stateClass(data.status.detail)") {{data.status.detail}}
+				.row.wrapper(ng-if="data.status.code==2")
+					.col-sm-6
+						.progress.bglight.dker
+							.progress-bar.progress-bar-striped.bg-warning.active(role="progressbar",ng-style="{'width':progressData+'%'}")
+				span.wrapper
+					button.btn.btn-sm.btn-addon.m-b-xs(ng-repeat="item in data.actions",ng-if="item.name!='detail'&&item.name!='delete'",ng-class="btnStyle[item.name]['btn']",ng-click="action(item)")
+						i.fa(ng-class="btnStyle[item.name]['icon']")
+						span(translate="{{item.name}}") {{itemt.name}}
+					button.btn.btn-danger.btn-sm.btn-addon.m-b-xs(ng-if="data.actions.delete",ng-click="delete()")
+						i.fa(ng-class="btnStyle['delete']['icon']")
+						span(translate="{{data.actions.delete.name}}") {{data.actions.delete.name}}
+					
+				
+			.panel-body
+				tabset.tab-container
+					tab()
+						tab-heading 配置
+						
+					tab(ng-if="data.inspect")
+						tab-heading 详情
+						.wrapper
+
+							
+
+

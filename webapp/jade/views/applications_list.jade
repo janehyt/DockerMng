@@ -18,7 +18,7 @@ div(ng-controller="ApplicationsListCtrl")
 								span.input-group-btn
 									input.btn.btn-md.btn-default(type="submit",value="搜索")
 						.pull-right
-							button.btn.btn-sm.btn-default(ng-click="create()",type="button") 创建应用
+							button.btn.btn-default(ng-click="create()",type="button") 创建应用
 				.table-responsive
 					table.table.table-striped.b-t.b-light
 						thead
@@ -42,13 +42,24 @@ div(ng-controller="ApplicationsListCtrl")
 								td {{item.name}}
 								td 
 									a(ng-click="getRepo(item.image)")
-										span.label.label-primary{{item.image}}
+										span.label.label-primary {{item.image}}
 								td {{item.created|time}}
 								//- td {{item.updated|time}}
 								td
 									span.label(ng-class="stateClass(item.status.detail)") {{item.status.detail}}
 								td
-									button.btn.btn-sm.btn-default(type="button",ng-click="delete(item.id)") 查看详情
+									.btn-group.dropdown(dropdown="")
+										button.btn.btn-default(type="button",ng-click="detail(item.id)",translate="detail") detail
+										button.btn.btn-default(dropdown-toggle="")
+											span.caret
+										ul.dropdown-menu
+											li
+												a(ng-click="detail(item.id)",translate="detail") detail
+											li(ng-repeat="act in item.actions",ng-if="act.name!='detail'&&act.name!='delete'")
+												a(ng-click="action(act)",translate="{{act.name}}") {{act.name}}
+											li(ng-if="item.actions.delete")
+												a(ng-click="delete(item)",translate="delete") destroy
+
 					.pull-right
 						a.btn.btn-default.btn-sm(ng-disabled="!results.previous",ng-click="loadResults(results.previous)") 上一页
 						a.btn.btn-default.btn-sm(ng-disabled="!results.next",ng-click="loadResults(results.next)") 下一页

@@ -81,6 +81,10 @@ angular.module('app')
                   url: '/applications',
                   templateUrl: 'app/views/applications_list.html'
               })
+              .state('app.application',{
+                  url:'/application/:id',
+                  templateUrl:'app/views/application_detail.html'
+              })
               .state('app.publish',{
                   url:'/publish/:namespace/:name/:tag',
                   templateUrl:'app/views/application_create.html'

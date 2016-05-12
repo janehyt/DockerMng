@@ -32,7 +32,7 @@ div(ng-controller="RepoListCtrl")
 											td {{item.pull_count|largeNumber}}
 											//- td {{item.description}}
 											td
-												button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.name)") 查看详情
+												button.btn.btn-default(type="button",ng-click="detail(item.name)") 查看详情
 				
 								.pull-right
 									a.btn.btn-default.btn-sm(ng-disabled="!repos.previous",ng-click="loadData(repos.previous)") 上一页

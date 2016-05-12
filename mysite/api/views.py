@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*- 
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404,redirect
 
 # Create your views here.
 from django.contrib.auth.models import User
@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser,MultiPartParser
 from rest_framework.decorators import permission_classes,detail_route,list_route
 from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.reverse import reverse
 from .serializers import UserSerializer,ContainerSerializer,ImageSerializer,ProgressSerializer
 from .docker_client import DockerClient,DockerHub
 from .models import Container,Image,Progress
@@ -19,6 +20,11 @@ from api import files
 from docker import errors
 from mysite import settings
 import os,json,markdown,time
+
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -108,7 +114,7 @@ class ContainerViewSet(viewsets.ViewSet):
                     container["status"]["detail"] = "no instance"
                 else:
                     container["status"]["detail"] = c
-                # container["url"] = base_url+str(container['id'])
+            container["actions"]=self.__actions(container["status"],container["id"],request)
         return pagination.get_paginated_response(containers)
 
     def retrieve(self, request, pk=None):
@@ -122,7 +128,62 @@ class ContainerViewSet(viewsets.ViewSet):
                 container["inspect"] = cli.inspect_container(data.name)
             except errors.NotFound:
                 pass
+            else:
+                container["status"]["detail"] = container["inspect"]["State"]["Status"]
+        container["actions"]=self.__actions(container["status"],container["id"],request)
         return Response(container)
+
+    def __actions(self,status,pk=None,request=None):
+        actions=OrderedDict({"detail":{
+            "name":"detail",
+            "url": reverse("container-detail",args=[pk],request=request)
+        }})
+        action_delete={"name":"delete","url": reverse("container-detail",args=[pk],request=request)}
+        if status["code"]==-1:
+            pass
+        elif status["code"]==0:
+            if status["detail"]=="running":
+                actions["stop"]={
+                    "name":"stop",
+                    "url":reverse("container-stop",args=[pk],request=request)
+                }
+                actions["restart"]={
+                    "name":"restart",
+                    "url": reverse("container-restart",args=[pk],request=request)
+                }
+                actions["pause"]={
+                    "name":"pause",
+                    "url": reverse("container-pause",args=[pk],request=request)
+                }
+            elif status["detail"]=="paused":
+                actions["unpause"]={
+                    "name": "unpause",
+                    "url": reverse("container-unpause",args=[pk],request=request)
+                }
+            else:
+                actions["start"]={
+                    "name":"start",
+                    "url": reverse("container-run",args=[pk],request=request)
+                }
+                actions["delete"]= action_delete
+        elif status["code"]==1:
+            actions["start"]={
+                "name":"create",
+                "url": reverse("container-pull-image",args=[pk],request=request)
+            }
+            actions["delete"]=action_delete
+        elif status["code"]==2:
+            actions["start"]={
+                "name":"recreate",
+                "url": reverse("container-pull-image",args=[pk],request=request)
+            }
+        else:
+            actions["start"]={
+                "name":"create",
+                "url": reverse("container-run",args=[pk],request=request)
+            }
+            actions["delete"]=action_delete
+        return actions
 
     # def update(self,request,pk=None):
     #     return Response({"detail":"PUT method forbidden"},status=403)
@@ -212,6 +273,7 @@ class ContainerViewSet(viewsets.ViewSet):
         if st['code']==1 or st['code']==2:
             image = container.image
             # 拉取镜像
+            ps = image.progresses.all().delete()
             pull_image = cli.pull(str(image),stream=True)
             image.status = Image.PULLING
             image.save()
@@ -221,8 +283,8 @@ class ContainerViewSet(viewsets.ViewSet):
                 p_id=pr.get("id","")
                 #保存状态
                 if "Pulling from" not in status and len(p_id)==12:
-                    progress = Progress(image=image,id=p_id,
-                        status=status)
+                    progress = Progress.objects.get_or_create(image=image,pid=p_id)[0]
+                    progress.status=status
                     detail = pr.get("progressDetail")
                     if detail:
                         progress.detail=json.dumps(detail)
@@ -230,9 +292,11 @@ class ContainerViewSet(viewsets.ViewSet):
                     progress.save()
             image.status=Image.EXISTED
             image.save()
+            ps = image.progresses.all().delete()
             # print image.status
-            return Response("Pulling complete")
-        return Response("Do not need to pull image")
+            # return Response("/api/containers/"+pk+"/progress",status=307)
+        #镜像拉取结束后重定向启动应用
+        return redirect(reverse('container-run',args=[pk],request=request))
 
     @detail_route()
     def run(self,request,pk=None):
@@ -252,10 +316,12 @@ class ContainerViewSet(viewsets.ViewSet):
             elif st['code']==0:
                 cli.start(container.name)
                 return Response(True)
+            elif st['code']==1 or st['code']==2:
+                return redirect(reverse('container-progress',args=[pk],request=request))
         except errors.APIError,e:
                 return Response({"reason":e.response.reason,
                     "detail":e.explanation},status=e.response.status_code)
-
+        # 应用状态出错，不能启动
         # print data
         return Response(False)
 
@@ -268,6 +334,48 @@ class ContainerViewSet(viewsets.ViewSet):
         if st['code']==0:
             try:
                 data=cli.stop(container.name)
+            except errors.APIError,e:
+                return Response({"reason":e.response.reason,
+                    "detail":e.explanation},status=e.response.status_code)
+        # print data
+        return Response(data)
+    @detail_route()
+    def restart(self,request,pk=None):
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        st = container.getDetailStatus()
+        data = ContainerSerializer(container,context={'request':request}).data
+        if st['code']==0:
+            try:
+                data=cli.restart(container.name)
+            except errors.APIError,e:
+                return Response({"reason":e.response.reason,
+                    "detail":e.explanation},status=e.response.status_code)
+        # print data
+        return Response(data)
+    @detail_route()
+    def pause(self,request,pk=None):
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        st = container.getDetailStatus()
+        data = ContainerSerializer(container,context={'request':request}).data
+        if st['code']==0:
+            try:
+                data=cli.pause(container.name)
+            except errors.APIError,e:
+                return Response({"reason":e.response.reason,
+                    "detail":e.explanation},status=e.response.status_code)
+        # print data
+        return Response(data)
+    @detail_route()
+    def unpause(self,request,pk=None):
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        st = container.getDetailStatus()
+        data = ContainerSerializer(container,context={'request':request}).data
+        if st['code']==0:
+            try:
+                data=cli.unpause(container.name)
             except errors.APIError,e:
                 return Response({"reason":e.response.reason,
                     "detail":e.explanation},status=e.response.status_code)
@@ -383,3 +491,24 @@ class FileViewSet(viewsets.ViewSet):
         # do some stuff with uploaded file
         # ...
         return Response(status=status)
+    @list_route()
+    def rename(self,request):
+        user = request.user;
+        path=files.getUploadDir(str(user))
+        # print request.query_params
+        filename=request.query_params.get("filename","")
+        newname = request.query_params.get("newname","")
+        # print filename,newname
+        if len(filename) and len(newname):
+            filename=os.path.join(path,filename)
+            newname=os.path.join(path,newname)
+            return Response(status=files.renameFile(filename,newname))
+        return Response({"detail":"filename and newname required"},status=406)
+    @list_route()
+    def remove(self,request):
+        path = files.getUploadDir(str(request.user))
+        filename = request.query_params.get("filename","")
+        if len(filename):
+            filename=os.path.join(path,filename)
+            return Response(status=files.destroyFile(filename))
+        return Response({"detail":"filename required"},status=406)

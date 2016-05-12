@@ -10,8 +10,10 @@ div(ng-controller="RepoDetailCtrl")
 			.panel-heading.bg-dark
 				.h2.text-lt {{name}}
 				.row.wrapper
-					.col-sm-2.text-lt 最近更新: {{data.last_updated|time}}
-					.col-sm-2.text-lt 拉取数: {{data.pull_count|largeNumber}}
+					.col-sm-4.text-lt 最近更新: 
+						span.label.label-info {{data.last_updated|time}}
+					.col-sm-4.text-lt 拉取数: 
+						span.label.label-info {{data.pull_count|largeNumber}}
 				span.wrapper
 					button.btn.btn-primary.btn-sm(ng-click="publish('latest')") 部署latest版本
 				
@@ -35,7 +37,7 @@ div(ng-controller="RepoDetailCtrl")
 									span.col-xs-3 {{tag.last_updated|time}}
 									span.col-xs-3 {{tag.full_size|size}}
 									.pull-right
-										button.btn.btn-default.btn-sm(ng-click="publish(tag.name)") 部署	
+										button.btn.btn-default(ng-click="publish(tag.name)") 部署	
 
 							.pull-right
 								a.btn.btn-default.btn-sm(ng-disabled="!tags.previous",ng-click="loadTags(tags.previous)") 上一页

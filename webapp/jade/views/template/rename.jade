@@ -1,0 +1,14 @@
+.modal-header.bg-primary
+	.modal-title
+		h4.h4 {{item.name}}
+		p.text-lt 类型： {{item.suffix}}
+.modal-body
+	
+	form.form-validation.form-horizontal(name = "modalForm")
+		.form-group
+			label.col-sm-2.control-label 重命名
+			.col-sm-8
+				input.form-control(type="text",ng-model="rename",required="")
+.modal-footer
+	button.btn.btn-default(ng-click="cancel()",type="button") 取消
+	button.btn.btn-default(ng-click="ok()",type="button",ng-disabled="modalForm.$invalid") 确认

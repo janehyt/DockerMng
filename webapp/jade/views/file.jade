@@ -39,9 +39,23 @@ div(ng-controller="FileCtrl")
 												span.text-danger(ng-show="item.isError")
 													i.glyphicon.glyphicon-remove
 											td(nowrap="")
-												button.btn.btn-default.btn-xs(type="button",ng-click="item.upload()",ng-disabled="item.isReady||item.isUploading||item.isSuccess") 上传
-												button.btn.btn-default.btn-xs(type="button",ng-click="item.cancel()",ng-disabled="!item.isUploading") 取消
-												button.btn.btn-default.btn-xs(type="button",ng-click="item.remove()") 删除
+												button.btn.btn-success(type="button",ng-click="item.upload()",ng-disabled="item.isReady||item.isUploading||item.isSuccess") 上传
+												button.btn.btn-warning(type="button",ng-click="item.cancel()",ng-disabled="!item.isUploading") 取消
+												button.btn.btn-danger(type="button",ng-click="item.remove()") 删除
+								div
+									div
+										p 队列进度:
+										.progress.bg-light.bker
+											.progress-bar.progress-bar-striped.bg-info.active(role="progressbar",ng-style="{'width':uploader.progress+'%'}")
+									button.btn.btn-addon.btn-default(type="button",ng-click="uploader.uploadAll()",ng-disabled="!uploader.getNotUploadedItems().length")
+										i.fa.fa-arrow-circle-o-up
+										| 全部上传
+									button.btn.btn-addon.btn-default(type="button",ng-click="uploader.cancleAll()",ng-disabled="!uploader.isUploading")
+										i.fa.fa-ban
+										| 全部取消
+									button.btn.btn-addon.btn-danger(type="button",ng-click="uploader.clearQueue()",ng-disabled="!uploader.queue.length")
+										i.fa.fa-trash-o
+										| 全部移除
 					tab(select="loadFiles()")
 						tab-heading 已有文件
 						.wrapper
@@ -59,8 +73,8 @@ div(ng-controller="FileCtrl")
 											td(nowrap="") {{item.size|size}}
 											td(nowrap="")
 												//- button.btn.btn-default.btn-xs(type="button",ng-click="download(item.name)") 下载
-												button.btn.btn-default.btn-xs(type="button",ng-click="rename(item.name)") 重命名
-												button.btn.btn-default.btn-xs(type="button",ng-click="remove(item.name)") 删除
+												button.btn.btn-default(type="button",ng-click="rename(item.name)") 重命名
+												button.btn.btn-danger(type="button",ng-click="remove(item.name)") 删除
 	script(type="text/ng-template",id="rename.html")
 			.modal-header.bg-primary
 				.modal-title

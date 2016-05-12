@@ -97,3 +97,14 @@ def unzip(zipfilename, unzipdirname):
 			file.close()
 
 	print "success"
+
+def renameFile(filename,newname):
+	if os.path.isfile(filename):
+		os.rename(filename,newname)
+		return 204
+	return 403
+def destroyFile(filename):
+	if os.path.isfile(filename):
+		os.remove(filename)
+		return 204
+	return 403

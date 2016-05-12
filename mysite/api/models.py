@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*- 
 from django.db import models
 from django.contrib.auth.models import User
-import os,random
+import os,random,json
 
 class Image(models.Model):
 	CREATING = "CR"
@@ -50,6 +50,7 @@ class Image(models.Model):
 			result["code"]=-1
 			result["detail"]="error image"
 		return result
+
 # Create your models here.
 class Container(models.Model):
 	CREATING = "CR"
@@ -137,7 +138,7 @@ class Container(models.Model):
 		if len(self.command)>0:
 			params["command"]=self.command.split(",")
 		if len(self.envs)>0:
-			params["envs"]=self.envs.split(",")
+			params["environment"]=self.envs.split(",")
 		if len(self.ports)>0:
 			ports=self.ports
 			ports = ports.replace(":","")
@@ -145,15 +146,25 @@ class Container(models.Model):
 		return params
 
 class Progress(models.Model):
-	id = models.CharField(primary_key=True,max_length = 12)
+	pid = models.CharField(max_length = 12)
 	status = models.CharField(max_length = 100)
 	image = models.ForeignKey(Image,on_delete=models.CASCADE,
 		related_name="progresses",related_query_name="progress")
 	detail = models.CharField(blank=True,max_length = 150)
 	pr = models.CharField(blank=True,max_length = 150)
+	class Meta:
+		unique_together=('pid','image')
+
 
 	def __unicode__(self):
 		return self.id
+	def getDetail(self):
+		result={"current":1,"total":1}
+		if len(self.detail)>0:
+
+			result=json.loads(self.detail)
+		return result
+
 
 def getPort():
 	pscmd = "netstat -ntl |grep -v Active| grep -v Proto|awk '{print $4}'|awk -F: '{print $NF}'"

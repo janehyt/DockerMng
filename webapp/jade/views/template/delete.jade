@@ -1,0 +1,12 @@
+.modal-header.bg-danger
+	.modal-title
+		h4.h4 删除
+.modal-body
+	.row
+		.col-sm-offset-1.col-sm-8 
+			p 是否确认删除
+				strong {{name}}
+				| ?
+.modal-footer
+	button.btn.btn-default(ng-click="cancel()",type="button") 取消
+	button.btn.btn-danger(ng-click="ok()",type="button",ng-disabled="modalForm.$invalid") 删除

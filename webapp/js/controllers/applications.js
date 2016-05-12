@@ -1,4 +1,5 @@
-app.controller('ApplicationsListCtrl',['$scope','$http','$state',function($scope,$http,$state){
+app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal',
+	function($scope,$http,$state,$modal){
 
 	
 	$scope.loadData=function(){
@@ -16,7 +17,7 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state',function($scope
 			return "label-success"
 		else if(status=="existed"||status=="exited")
 			return "label-danger"
-		else if(status=="no instance"||status=="done image")
+		else if(status=="paused"||status=="pulling image")
 			return "label-warning"
 		else
 			return "label-default"
@@ -41,17 +42,47 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state',function($scope
 		}
 		$state.go('app.repo',params);
 	}
-	$scope.detail = function(){
-
+	$scope.detail = function(id){
+		console.info(id);
+		$state.go('app.application',{id:id})
 	}
-	$scope.delete=function(i){
-		$http.delete("api/containers/"+i+"/").then(
+	$scope.delete=function(item){
+
+		var modalIns = $modal.open({
+			templateUrl: 'app/views/template/delete.html',
+			controller: 'ModalDelCtrl',
+			resolve:{
+			  name:function(){
+			    return item.name;
+			  }
+			}
+		});
+		modalIns.result.then(function(){
+		// var params = {filename:name,newname:data}
+			$http.delete("api/containers/"+item.id+"/").then(
+				function(response){
+					console.info(response);
+					$scope.loadData();
+			},function(x){
+				console.info(x);
+			})
+		},function(){
+		console.info("dismiss");
+		})
+
+		
+	}
+	$scope.action=function(a){
+		// console.info(a.url)
+		$http.get(a.url).then(
 			function(response){
 				console.info(response);
 				$scope.loadData();
-		},function(x){
-			console.info(x);
-		})
+			},
+			function(x){
+				console.info(x);
+			}
+		)
 	}
 	$scope.title="应用管理";
 	$scope.containers=[];
@@ -101,6 +132,10 @@ app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficia
 			$http.post("api/containers/",$scope.container).then(
 				function(response){
 					console.info(response);
+					var id = response.data.id;
+					if(id){
+						$state.go("app.application",{id:id});
+					}
 				},function(x){
 					console.info(x);
 				});
@@ -280,5 +315,154 @@ app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficia
 	
 		// $scope.ports={};
 
+
+}]);
+
+app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$modal',
+	function($scope,$http,$state,$timeout,$modal){
+
+
+	$scope.loadData=function(){	
+		$http.get($scope.url).then(
+			function(response){
+				console.info(response.data);
+				$scope.data=response.data;
+				$scope.name=$scope.data.name;
+				if($scope.data.status.code==2){
+					$scope.progress();
+				}
+			},
+			function(x){
+				console.info(x);
+			}
+		);
+	}
+	$scope.progress=function(){
+		$timeout(
+			function(){
+				$http.get($scope.url+"progress").then(
+					function(response){
+						
+						var progress=response.data;
+						$scope.calcuProgress(progress);
+						if(progress!='OK'){
+							$scope.progress();
+						}
+					},
+					function(x){
+
+					}
+
+				)
+			},2000
+		);
+		
+	}
+	$scope.stateClass = function(status){
+		if(status=="running")
+			return "label-success"
+		else if(status=="existed"||status=="exited")
+			return "label-danger"
+		else if(status=="paused"||status=="pulling image")
+			return "label-warning"
+		else
+			return "label-default"
+	}
+	$scope.delete=function(){
+
+		var modalIns = $modal.open({
+			templateUrl: 'app/views/template/delete.html',
+			controller: 'ModalDelCtrl',
+			resolve:{
+			  name:function(){
+			    return $scope.name;
+			  }
+			}
+		});
+		modalIns.result.then(function(){
+		// var params = {filename:name,newname:data}
+			$http.delete($scope.url).then(
+				function(response){
+					console.info(response.data);
+					$state.go("app.applications");
+				},
+				function(x){
+					console.info(x);
+				}
+			);
+		},function(){
+		console.info("dismiss");
+		})
+
+		
+	}
+	$scope.action=function(a){
+		$http.get(a.url).then(
+			function(response){
+				console.info(response.data);
+				$scope.loadData();
+			},
+			function(x){
+				console.info(x);
+			}
+		);
+	}
+	$scope.calcuProgress=function(data){
+		var current=1;
+		var total=1;
+		var flag=false;
+		for(var p in data){
+			if(data[p].status=="Downloading"){
+				flag=true;
+				current+=data[p].detail.current;
+				total+=data[p].detail.total;
+			}
+		}
+		if(flag)
+			$scope.progressData=(current/total).toFixed(2)*100;
+		// console.info($scope.progressData);
+	}
+
+	$scope.title="应用列表";
+	$scope.name="";
+	$scope.url="api/containers/"+$state.params.id+"/";
+	$scope.loadData();
+	$scope.progressData=0;
+	$scope.btnStyle={
+		"start": {
+			"btn":"btn-success",
+			"icon":"fa-play"
+		},
+		"create":  {
+			"btn":"btn-success",
+			"icon":"fa-plus"
+		},
+		"recreate":  {
+			"btn":"btn-primary",
+			"icon":"fa-refresh"
+		},
+		"stop":  {
+			"btn":"btn-danger",
+			"icon":"fa-stop"
+		},
+		"delete":  {
+			"btn":"btn-danger",
+			"icon":"fa-trash-o"
+		},
+		"pause":  {
+			"btn":"btn-warning",
+			"icon":"fa-pause"
+		},
+		"unpause":  {
+			"btn":"btn-success",
+			"icon":"fa-play"
+		},
+		"restart":  {
+			"btn":"btn-primary",
+			"icon":"fa-refresh"
+		}
+	}
+	
+	
 
 }]);

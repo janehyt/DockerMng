@@ -11,7 +11,7 @@ div(ng-controller="ApplicationDetailCtrl")
 				.h2.text-lt {{name}}
 				.row.wrapper
 					//- .col-sm-2.text-lt 部署于: {{data.updated|time}}
-					.col-sm-4.text-lt 创建于: 
+					.col-sm-4.text-lt 配置创建于: 
 						span.label.label-info {{data.created|time}}
 					.col-sm-4.text-lt 状态: 
 						span.label(ng-class="stateClass(data.status.detail)") {{data.status.detail}}
@@ -31,7 +31,7 @@ div(ng-controller="ApplicationDetailCtrl")
 			.panel-body
 				tabset.tab-container
 					tab()
-						tab-heading 配置
+						tab-heading 个人配置
 						form.form-horizontal
 							.form-group
 								label.col-sm-2.control-label 所属镜像
@@ -126,8 +126,99 @@ div(ng-controller="ApplicationDetailCtrl")
 										p.text-center.text-danger(ng-if="empty(data.config.volumes)")
 											strong 未自定义Volume挂载
 					tab(ng-if="data.inspect")
-						tab-heading 详情
-						.wrapper
+						tab-heading 实例信息
+						form.form-horizontal
+							.form-group
+								label.col-sm-2.control-label 时间信息
+								.col-sm-2
+									p.form-control-static
+										strong 创建于
+										span.label.label-info {{inspect.created|time}}
+								.col-sm-2
+									p.form-control-static
+										strong 启动于
+										span.label.label-success {{inspect.started|time}}
+								.col-sm-2
+									p.form-control-static
+										strong 终止于
+										span.label.label-danger {{inspect.finished|time}}
+							.form-group
+								label.col-sm-2.control-label 启动命令
+								.col-sm-8
+									p.form-control-static
+										span.label.label-info(ng-repeat="c in inspect.cmd") {{c}}
+										strong.text-danger(ng-if="empty(inspect.cmd)") 未自定义启动命令
+							.line.b-b.line-lg.pull-in
+							.form-group
+								label.col-sm-2.control-label 开放端口
+								.col-sm-8
+									.table-responsive
+										table.table
+											thead
+												th 容器端口
+												th 访问范围
+											tbody
+												tr(ng-repeat="p in inspect.ports")
+													td {{p.port}}
+													td {{p.detail}}
+										p.text-center.text-danger(ng-if="empty(data.config.ports)")
+											strong 未开放端口
+							.line.b-b.line-lg.pull-in
+							.form-group
+								label.col-sm-2.control-label 环境变量
+								.col-sm-8
+									.table-responsive
+										table.table
+											thead
+												th 键
+												th 值
+											tbody
+												tr(ng-repeat="e in inspect.envs")
+													td {{e.key}}
+													td {{e.value}}
+										p.text-center.text-danger(ng-if="empty(inspect.envs)")
+											strong 未设置环境变量
+							
+							.line.b-b.line-lg.pull-in
+							.form-group
+								label.col-sm-2.control-label 应用绑定
+								.col-sm-8
+									.table-responsive
+										table.table
+											thead
+												th 应用名称
+												th 绑定别名
+											tbody
+												tr(ng-repeat="l in inspect.links")
+													td
+														a(ui-sref="app.application({id:l.id})")
+															span.label.label-primary {{l.value}}
+													td {{l.key}}
+										p.text-center.text-danger(ng-if="empty(inspect.links)")
+											strong 没有应用绑定
+							.line.b-b.line-lg.pull-in
+							.form-group
+								label.col-sm-2.control-label Volume挂载
+								.col-sm-8
+									span.help-block 若为路径表达式，则以'/'开头表示绝对路径，其他路径为容器目录的相对路径
+									.table-responsive
+										table.table
+											thead
+												th 挂载处
+												th 容器路径
+											tbody
+												tr(ng-repeat="v in inspect.volumes")
+													td {{v.value}}
+													td {{v.key}}
+										p.text-center.text-danger(ng-if="empty(inspect.volumes)")
+											strong 没有Volume挂载
+							.form-group
+								label.col-sm-2.control-label 内部IP
+								.col-sm-8
+									p.form-control-static
+										span.label.label-info {{inspect.ip}}
+
+
 
 							
 

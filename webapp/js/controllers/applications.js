@@ -389,6 +389,7 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 				if($scope.data.status.code==2){
 					$scope.progress();
 				}
+				$scope.resolveInspect();
 			},
 			function(x){
 				console.info(x);
@@ -500,11 +501,72 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 			$scope.progressData=(total/count).toFixed(2)*100;
 		// console.info($scope.progressData);
 	}
+	$scope.resolveInspect=function(){
+		var data = $scope.data;
+		if(data.inspect){
+			$scope.inspect={
+				cmd:data.inspect.Config.Cmd,
+				created:data.inspect.Created,
+				started:data.inspect.State.StartedAt,
+				finished:data.inspect.State.FinishedAt,
+				ports:{},
+				envs:{},
+				ip:data.inspect.NetworkSettings.IPAddress,
+				volumes:{},
+				links:{}
+			}
+			var ports = data.inspect.Config.ExposedPorts;
+			for(var p in ports){
+				var detail="未知"
+				if(data.inspect.NetworkSettings.Ports){
+					var detail=data.inspect.NetworkSettings.Ports[p];
+					if(!$scope.empty(detail)){
+						detail=detail[0].HostIp+":"+detail[0].HostPort
+					}else{
+						detail="内部访问"
+					}
+				}
+				
+				$scope.inspect.ports[p]={port:p,detail:detail}
+			}
+			var envs = data.inspect.Config.Env;
+			for(var e in envs){
+				var en = envs[e].split("=");
+				if(en.length==2)
+					$scope.inspect.envs[en[0]]={key:en[0],value:en[1]};
+			}
+			if(!$scope.inspect.ip){
+				$scope.inspect.ip="未知"
+			}
+			var links = data.inspect.HostConfig.Links;
+			for(var l in links){
+				var ln=links[l].split(":");
+				if(ln.length==2){
+					var name = ln[0].substring(1);
+					$scope.inspect.links[name]=data.config.links[name]
+				}
+			}
+			var volumes = data.inspect.Mounts;
+			for(var v in volumes){
+				var de = volumes[v].Destination;
+				var sr = volumes[v].Source;
+				if(data.config.volumes[de]){
+					sr = data.config.volumes[de].value
+				}else{
+					sr = "docker volume挂载"
+				}
+				$scope.inspect.volumes[de]={key:de,value:sr}
+
+			}
+
+		}
+	}
 
 	$scope.title="应用列表";
 	$scope.name="";
 	$scope.url="api/containers/"+$state.params.id+"/";
-	$scope.loadData();
+	$scope.data={};
+	$scope.inspect={}
 	$scope.progressData=0;
 	$scope.btnStyle={
 		"start": {
@@ -540,6 +602,7 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 			"icon":"fa-refresh"
 		}
 	}
+	$scope.loadData();
 	
 	
 

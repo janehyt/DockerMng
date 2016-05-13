@@ -421,6 +421,20 @@ class ContainerViewSet(viewsets.ViewSet):
                     "detail":e.explanation},status=e.response.status_code)
         # print data
         return Response(data)
+    @detail_route()
+    def stats(self,request,pk=None):
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        cli = DockerClient().getClient()
+        st = container.getDetailStatus()
+        data = ContainerSerializer(container,context={'request':request}).data
+        if st['code']==0:
+            try:
+                data=cli.stats(container=container.name,stream=False)
+            except errors.APIError,e:
+                return Response({"reason":e.response.reason,
+                    "detail":e.explanation},status=e.response.status_code)
+        # print data
+        return Response(data)
 
 class RepoViewSet(viewsets.ViewSet):
     def list(self,request):

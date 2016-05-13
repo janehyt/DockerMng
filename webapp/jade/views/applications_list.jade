@@ -61,5 +61,22 @@ div(ng-controller="ApplicationsListCtrl")
 												a(ng-click="delete(item)",translate="delete") destroy
 
 					.pull-right
-						a.btn.btn-default.btn-sm(ng-disabled="!results.previous",ng-click="loadResults(results.previous)") 上一页
-						a.btn.btn-default.btn-sm(ng-disabled="!results.next",ng-click="loadResults(results.next)") 下一页
+							
+						.form-inline
+									span 共
+										strong {{page.count}}
+										| 个应用,每页显示
+									select.form-control(ng-model="page.page_size",ng-change="loadData()")
+										option(value="5") 5
+										option(value="10") 10
+										option(value="15") 15
+										option(value="20") 20
+						.form-inline
+							.input-group
+
+								span.input-group-btn
+									button.btn.btn-default(ng-disabled="!containers.previous",ng-click="loadData(containers.previous)") 上一页
+								select.form-control(ng-model="page.page",ng-change="loadData()")
+									option(ng-repeat="i in getPageArray() track by $index") {{$index+1}}
+								span.input-group-btn
+									button.btn.btn-default(ng-disabled="!containers.next",ng-click="loadData(containers.next)") 下一页

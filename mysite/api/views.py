@@ -273,7 +273,6 @@ class ContainerViewSet(viewsets.ViewSet):
     @detail_route()
     def pull_image(self,request,pk=None):
         container = get_object_or_404(self.queryset, pk=pk,user=request.user)
-        
         st = container.getDetailStatus()
         if st['code']==1 or st['code']==2:
             image = container.image
@@ -287,8 +286,9 @@ class ContainerViewSet(viewsets.ViewSet):
                 
                 for line in pull_image:
                     pr = json.loads(line)
-                    status = pr.get("status")
+                    status = pr.get("status","")
                     p_id=pr.get("id","")
+                    print json.dumps(pr,indent=4)
                     #保存状态
                     if "Pulling from" not in status and len(p_id)==12:
                         progress = Progress.objects.get_or_create(image=image,pid=p_id)[0]
@@ -298,10 +298,15 @@ class ContainerViewSet(viewsets.ViewSet):
                             progress.detail=json.dumps(detail)
                             progress.pr = pr.get("progress")
                         progress.save()
-                image.status=Image.EXISTED
-                image.save()
-                ps = image.progresses.all().delete()
-            except errors.APIError e:
+                if "Status: Downloaded newer image" in status:
+                    image.status=Image.EXISTED
+                    image.save()
+                    ps = image.progresses.all().delete()
+                else:
+                    image.status=Image.CREATING
+                    image.save()
+                    return Response({"detail":"Error occurs when pulling image"},status=408)
+            except errors.APIError,e:
                 image.status=Image.ERROR
                 image.save()
                 return Response({"reason":e.response.reason,
@@ -332,7 +337,12 @@ class ContainerViewSet(viewsets.ViewSet):
             elif st['code']==1 or st['code']==2:
                 return redirect(reverse('container-progress',args=[pk],request=request))
         except errors.APIError,e:
-                return Response({"reason":e.response.reason,
+            if e.response.status_code==404:
+                image=container.image
+                image.status=Image.CREATING
+                image.save()
+
+            return Response({"reason":e.response.reason,
                     "detail":e.explanation},status=e.response.status_code)
         # 应用状态出错，不能启动
         # print data

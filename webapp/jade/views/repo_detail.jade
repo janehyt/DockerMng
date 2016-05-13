@@ -38,11 +38,30 @@ div(ng-controller="RepoDetailCtrl")
 									span.col-xs-3 {{tag.full_size|size}}
 									.pull-right
 										button.btn.btn-default(ng-click="publish(tag.name)") 部署	
+							.table-responsive
+								.pull-right
+								
+									.form-inline
+										span 共
+											strong {{page.count}}
+											| 个应用,每页显示
+										select.form-control(ng-model="page.page_size",ng-change="loadTags()")
+											option(value="5") 5
+											option(value="10") 10
+											option(value="15") 15
+											option(value="20") 20
+									.form-inline
+										.input-group
 
-							.pull-right
+											span.input-group-btn
+												button.btn.btn-default(ng-disabled="!tags.previous",ng-click="loadTags(tags.previous)") 上一页
+											select.form-control(ng-model="page.page",ng-change="loadTags()")
+												option(ng-repeat="i in getPageArray() track by $index") {{$index+1}}
+											span.input-group-btn
+												button.btn.btn-default(ng-disabled="!tags.next",ng-click="loadTags(tags.next)") 下一页
+							//- .pull-right
 								a.btn.btn-default.btn-sm(ng-disabled="!tags.previous",ng-click="loadTags(tags.previous)") 上一页
 								a.btn.btn-default.btn-sm(ng-disabled="!tags.next",ng-click="loadTags(tags.next)") 下一页
-							br
 
 							
 

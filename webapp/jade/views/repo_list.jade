@@ -35,8 +35,28 @@ div(ng-controller="RepoListCtrl")
 												button.btn.btn-default(type="button",ng-click="detail(item.name)") 查看详情
 				
 								.pull-right
-									a.btn.btn-default.btn-sm(ng-disabled="!repos.previous",ng-click="loadData(repos.previous)") 上一页
-									a.btn.btn-default.btn-sm(ng-disabled="!repos.next",ng-click="loadData(repos.next)") 下一页
+							
+									.form-inline
+										span 共
+											strong {{page.repos.count}}
+											| 个应用,每页显示
+										select.form-control(ng-model="page.repos.page_size",ng-change="loadData()")
+											option(value="5") 5
+											option(value="10") 10
+											option(value="15") 15
+											option(value="20") 20
+									.form-inline
+										.input-group
+
+											span.input-group-btn
+												button.btn.btn-default(ng-disabled="!repos.previous",ng-click="loadData(repos.previous)") 上一页
+											select.form-control(ng-model="page.repos.page",ng-change="loadData()")
+												option(ng-repeat="i in getPageArray(page.repos) track by $index") {{$index+1}}
+											span.input-group-btn
+												button.btn.btn-default(ng-disabled="!repos.next",ng-click="loadData(repos.next)") 下一页
+								//- .pull-right
+								//- 	a.btn.btn-default.btn-sm(ng-disabled="!repos.previous",ng-click="loadData(repos.previous)") 上一页
+								//- 	a.btn.btn-default.btn-sm(ng-disabled="!repos.next",ng-click="loadData(repos.next)") 下一页
 					tab
 						tab-heading 搜索镜像
 						.wrapper
@@ -65,6 +85,27 @@ div(ng-controller="RepoListCtrl")
 											td
 												button.btn.btn-sm.btn-default(type="button",ng-click="detail(item.repo_name)") 查看详情
 								.pull-right
+							
+									.form-inline
+										span 共
+											strong {{page.results.count}}
+											| 个应用,每页显示
+										select.form-control(ng-model="page.results.page_size",ng-change="loadResults()")
+											option(value="5") 5
+											option(value="10") 10
+											option(value="15") 15
+											option(value="20") 20
+									.form-inline
+										.input-group
+
+											span.input-group-btn
+												button.btn.btn-default(ng-disabled="!results.previous",ng-click="loadResults(results.previous)") 上一页
+											select.form-control(ng-model="page.results.page",ng-change="loadResults()")
+												option(ng-repeat="i in getPageArray(page.results) track by $index") {{$index+1}}
+											span.input-group-btn
+												button.btn.btn-default(ng-disabled="!results.next",ng-click="loadResults(results.next)") 下一页
+								
+								//- .pull-right
 									a.btn.btn-default.btn-sm(ng-disabled="!results.previous",ng-click="loadResults(results.previous)") 上一页
 									a.btn.btn-default.btn-sm(ng-disabled="!results.next",ng-click="loadResults(results.next)") 下一页
 							//- .h3.text-primary.text-center(ng-show="!results.results||results.results.length==0") 暂无镜像显示

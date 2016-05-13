@@ -1,18 +1,39 @@
-app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toaster',
-	function($scope,$http,$state,$modal,toaster){
+app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toaster','$timeout',
+	function($scope,$http,$state,$modal,toaster,$timeout){
 
 	
-	$scope.loadData=function(){
-		$http.get("api/containers")
+	$scope.loadData=function(url){
+		if(!url||url==""){
+			if(Math.ceil($scope.page.count/$scope.page.page_size)<
+				$scope.page.page){
+				$scope.page.page=1
+			}
+			url="api/containers?page_size="+$scope.page.page_size+
+				"&page="+$scope.page.page;
+		}
+		$scope.containers.previous=null;
+		$scope.containers.next=null;
+		$http.get(url)
 			.then(function(response){
 					$scope.containers=response.data;
-					console.info($scope.containers);
+					$scope.page.count=$scope.containers.count;
+					var tmp=url.split("?");
+					tmp=tmp[1].split("&");
+					for(var t in tmp){
+						if(tmp[t].indexOf("page=")==0){
+							$scope.page.page=tmp[t].substring(5);
+						}
+					}
+					// console.info($scope.page);
 				},function(x){
 					console.info(x);
 					// toaster.pop("danger",x.status,x.data);
 				});
 	}
-	
+	$scope.getPageArray=function(){
+		var num = Math.ceil($scope.page.count/$scope.page.page_size)
+		return new Array(num);
+	}
 	$scope.stateClass = function(status){
 		if(status=="running")
 			return "label-success"
@@ -67,7 +88,7 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 					toaster.pop("success","删除成功","应用"+item.name+"已成功移除！")
 			},function(x){
 				console.info(x);
-				toaster.pop("danger",x.status,x.data)
+				toaster.pop("error",x.status,x.data)
 			})
 		},function(){
 			console.info("dismiss");
@@ -77,21 +98,28 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 	}
 	$scope.action=function(a){
 		// console.info(a.url)
+		var m = a.url.indexOf("pull_image/")
 		$http.get(a.url).then(
 			function(response){
 				console.info(response);
-				$scope.loadData();
+				if(m!=a.url.length-11){
+					$scope.loadData();
+				}
 				toaster.pop("success",a.name,"操作成功");
 			},
 			function(x){
 				console.info(x);
-				toaster.pop("danger",x.status,x.data);
+				toaster.pop("error",x.status,x.data);
 			}
 		)
+		if(m==a.url.length-11&&a.name=="create"){
+			$timeout(function() {$scope.loadData()}, 1000);
+		}
 	}
 
 	$scope.title="应用管理";
 	$scope.containers=[];
+	$scope.page={page:1,page_size:10,count:1}
 	$scope.loadData();
 	
 
@@ -350,6 +378,7 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 		return true
 	}
 	$scope.loadData=function(){	
+		console.info($state);
 		$http.get($scope.url).then(
 			function(response){
 				console.info(response.data);
@@ -365,24 +394,26 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 		);
 	}
 	$scope.progress=function(){
-		$timeout(
-			function(){
+		
 				$http.get($scope.url+"progress").then(
 					function(response){
 						
 						var progress=response.data;
 						$scope.calcuProgress(progress);
-						if(progress!='OK'){
-							$scope.progress();
+						if(progress!='OK'&&$state.current.name=='app.application'){
+							$timeout(
+								function(){
+									$scope.progress();
+							},2000
+							);
 						}
 					},
 					function(x){
-
+						console.info(x);
 					}
 
 				)
-			},2000
-		);
+			
 		
 	}
 	$scope.stateClass = function(status){
@@ -426,31 +457,41 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 		
 	}
 	$scope.action=function(a){
+		var m = a.url.indexOf("pull_image/")
 		$http.get(a.url).then(
 			function(response){
 				console.info(response.data);
-				$scope.loadData();
+				if(m!=a.url.length-11){
+					$scope.loadData();
+				}
 				toaster.pop("success",a.name,"操作成功");
 			},
 			function(x){
 				console.info(x);
-				toaster.pop("danger",x.status,x.data);
+				toaster.pop("error",x.status,x.data);
+				$scope.loadData();
 			}
 		);
+		// 仅初次pull重新载入
+		if(m==a.url.length-11&&a.name=="create"){
+			$timeout(function() {$scope.loadData()}, 1000);
+		}
 	}
 	$scope.calcuProgress=function(data){
-		var current=1;
-		var total=1;
-		var flag=false;
+		var total=0;
+		var count = data.length;
 		for(var p in data){
-			if(data[p].status=="Downloading"){
-				flag=true;
-				current+=data[p].detail.current;
-				total+=data[p].detail.total;
+			if(data[p].status){
+				if(data[p].status=="Pull complete"||data[p].status=="Download complete"||data[p].status.indexOf("Verifying")!=-1){
+					total+=1;
+				}
+				else if(data[p].detail.current&&data[p].detail.total){
+					total+=data[p].detail.current/data[p].detail.total
+				}
 			}
 		}
-		if(flag)
-			$scope.progressData=(current/total).toFixed(2)*100;
+		if(count>0)
+			$scope.progressData=(total/count).toFixed(2)*100;
 		// console.info($scope.progressData);
 	}
 

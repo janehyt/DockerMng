@@ -2,20 +2,41 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 	// uiLoad.load('app/vendor/libs/moment.min.js');
 	$scope.loadData=function(url){
 		if(!url){
-			url = "api/repos";
+			if(Math.ceil($scope.page.repos.count/$scope.page.repos.page_size)<
+				$scope.page.repos.page){
+				$scope.page.repos.page=1
+			}
+			url = "api/repos?page_size="+$scope.page.repos.page_size+
+				"&page="+$scope.page.repos.page;
 		}
 		$scope.repos.next=null;
 		$scope.repos.previous=null;
 		$http.get(url)
 			.then(function(response){
 				$scope.repos=response.data;
+				$scope.page.repos.count=$scope.repos.count;
+				$scope.page.repos.page=$scope.getPageFromUrl(url);
 				console.info($scope.repos);
 			},function(response){
 				console.info(response);
 			});
 	}
-	$scope.otherPage=function(params){
-		$state.go('app.repos',params);
+	// $scope.otherPage=function(params){
+	// 	$state.go('app.repos',params);
+	// }
+	$scope.getPageFromUrl=function(url){
+		var tmp=url.split("?");
+		tmp=tmp[1].split("&");
+		for(var t in tmp){
+			if(tmp[t].indexOf("page=")==0){
+				return tmp[t].substring(5);
+			}
+		}
+		return 1
+	}
+	$scope.getPageArray=function(pagemodel){
+		var num = Math.ceil(pagemodel.count/pagemodel.page_size)
+		return new Array(num);
 	}
 	
 	// $scope.isOfficial=function(namespace){
@@ -29,23 +50,33 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 			$state.go('app.repo',{name:name,namespace:"library"});
 	}
 	$scope.search=function(data){
-		console.info(data);
 		if(data&&data.length!=0){
-			$http.get("api/repos?query="+data)
-				.then(function(response){
-					$scope.results=response.data
-					console.info(response.data);
-				},function(response){
-					console.info(response);
-				});
-		}else{
-			console.info("null");
+			$scope.page.results={
+			page:1,
+			page_size:10,
+			query:data,
+			count:1
+			}
+			$scope.loadResults();
 		}
 	}
 	$scope.loadResults = function(url){
+		if(!url){
+			if(Math.ceil($scope.page.results.count/$scope.page.results.page_size)<
+				$scope.page.results.page){
+				$scope.page.results.page=1
+			}
+			url = "api/repos?query="+$scope.page.results.query+"&page_size="+$scope.page.repos.page_size+
+				"&page="+$scope.page.results.page;
+			console.info(url);
+		}
+		$scope.results.next=null;
+		$scope.results.previous=null;
 		$http.get(url)
 			.then(function(response){
 				$scope.results=response.data;
+				$scope.page.results.count=$scope.results.count;
+				$scope.page.results.page=$scope.getPageFromUrl(url);
 				console.info($scope.results);
 			},function(response){
 				console.info(response);
@@ -55,6 +86,19 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 	$scope.title="镜像仓库";
 	$scope.repos={};
 	$scope.results={};
+	$scope.page={
+		repos:{
+			page:1,
+			page_size:10,
+			count:1
+		},
+		results:{
+			page:1,
+			page_size:10,
+			query:"",
+			count:1
+		}
+	}
 	// $scope.query="";
 	
 
@@ -69,7 +113,7 @@ app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce','filterOfficia
 		$http.get("api/repos/"+$state.params.name+"?namespace="+$state.params.namespace)
 			.then(function(response){
 				$scope.data=response.data;
-				// console.info($scope.data);
+				console.info($scope.data);
 			},function(response){
 				console.info(response);
 			});
@@ -79,17 +123,36 @@ app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce','filterOfficia
 		$scope.tab=2;
 		$scope.tags.next=null;
 		$scope.tags.previous=null;
-		if(!url)
-			url = "api/repos/"+$state.params.name+"/tags"+"?namespace="+$state.params.namespace;
+		if(!url||url==""){
+			if(Math.ceil($scope.page.count/$scope.page.page_size)<
+				$scope.page.page){
+				$scope.page.page=1
+			}
+			url = "api/repos/"+$state.params.name+"/tags"+"?namespace="+$state.params.namespace+
+				"&page_size="+$scope.page.page_size+"&page="+$scope.page.page;
+		}
+			
 		$http.get(url)
 			.then(function(response){
 				$scope.tags=response.data;
+				$scope.page.count=$scope.tags.count;
+				var tmp=url.split("?");
+				tmp=tmp[1].split("&");
+				for(var t in tmp){
+					if(tmp[t].indexOf("page=")==0){
+						$scope.page.page=tmp[t].substring(5);
+					}
+				}
 				// console.info($scope.tags);
 			},function(response){
 				console.info(response);
 			});
 	}
 
+	$scope.getPageArray=function(){
+		var num = Math.ceil($scope.page.count/$scope.page.page_size)
+		return new Array(num);
+	}
 	$scope.loadHtmlData=function(data){
 		return $sce.trustAsHtml($scope.data.full_description);
 	}
@@ -110,7 +173,11 @@ app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce','filterOfficia
 	$scope.name=filterOfficial($state.params.namespace)+$state.params.name
 	$scope.data={full_description:"",last_updated:"",pull_count:0};
 	$scope.tags={}
-	
+	$scope.page={
+		page:1,
+		count:1,
+		page_size:10
+	}
 	
 
 }]);

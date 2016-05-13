@@ -30,6 +30,8 @@ angular.module('app')
  		var date = new Date(data);
  		var now = new Date();
  		var second = Math.round((now-date)/1000);
+ 		if(second<10)
+ 			return "刚刚";
  		if(second<60)
  			return second+"秒前";
  		if(second<3600)

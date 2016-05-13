@@ -98,23 +98,26 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 	}
 	$scope.action=function(a){
 		// console.info(a.url)
-		var m = a.url.indexOf("pull_image/")
+		// var m = a.url.indexOf("pull_image/")
+		var load = true;
 		$http.get(a.url).then(
 			function(response){
 				console.info(response);
-				if(m!=a.url.length-11){
+				// if(m!=a.url.length-11){
+					load=false
 					$scope.loadData();
-				}
+				// }
 				toaster.pop("success",a.name,"操作成功");
 			},
 			function(x){
 				console.info(x);
 				toaster.pop("error",x.status,x.data);
+				$scope.loadData();
 			}
 		)
-		if(m==a.url.length-11&&a.name=="create"){
-			$timeout(function() {$scope.loadData()}, 1000);
-		}
+		// if(m==a.url.length-11&&a.name=="create"){
+			$timeout(function() {if(load){$scope.loadData()}}, 1000);
+		// }
 	}
 
 	$scope.title="应用管理";
@@ -378,7 +381,6 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 		return true
 	}
 	$scope.loadData=function(){	
-		console.info($state);
 		$http.get($scope.url).then(
 			function(response){
 				console.info(response.data);
@@ -406,6 +408,8 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 									$scope.progress();
 							},2000
 							);
+						}else if(progress=='OK'){
+							$scope.loadData();
 						}
 					},
 					function(x){
@@ -457,13 +461,15 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 		
 	}
 	$scope.action=function(a){
-		var m = a.url.indexOf("pull_image/")
+		// var m = a.url.indexOf("pull_image/")
+		var load = true;
 		$http.get(a.url).then(
 			function(response){
 				console.info(response.data);
-				if(m!=a.url.length-11){
+				load=false;
+				// if(m!=a.url.length-11){
 					$scope.loadData();
-				}
+				// }
 				toaster.pop("success",a.name,"操作成功");
 			},
 			function(x){
@@ -473,9 +479,9 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 			}
 		);
 		// 仅初次pull重新载入
-		if(m==a.url.length-11&&a.name=="create"){
-			$timeout(function() {$scope.loadData()}, 1000);
-		}
+		
+			$timeout(function() {if(load){$scope.loadData()}}, 1000);
+		
 	}
 	$scope.calcuProgress=function(data){
 		var total=0;

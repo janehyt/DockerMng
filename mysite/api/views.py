@@ -133,6 +133,9 @@ class ContainerViewSet(viewsets.ViewSet):
             try:
                 container["inspect"] = cli.inspect_container(data.name)
             except errors.NotFound:
+                data.status=Container.CREATING
+                data.save()
+                container['status']=data.getDetailStatus()
                 pass
             else:
                 container["status"]["detail"] = container["inspect"]["State"]["Status"]
@@ -146,7 +149,17 @@ class ContainerViewSet(viewsets.ViewSet):
         }})
         action_delete={"name":"delete","url": reverse("container-detail",args=[pk],request=request)}
         if status["code"]==-1:
-            pass
+            actions["delete"]=action_delete
+            if status["detail"]=="error image":
+                actions["create"] = {
+                    "name":"recreate",
+                    "url": reverse("container-pull-image",args=[pk],request=request)
+                }
+            else:
+                actions["create"] = {
+                    "name":"recreate",
+                    "url": reverse("container-run",args=[pk],request=request)
+                }
         elif status["code"]==0:
             if status["detail"]=="running":
                 actions["stop"]={
@@ -274,7 +287,7 @@ class ContainerViewSet(viewsets.ViewSet):
     def pull_image(self,request,pk=None):
         container = get_object_or_404(self.queryset, pk=pk,user=request.user)
         st = container.getDetailStatus()
-        if st['code']==1 or st['code']==2:
+        if st['code']!=0 and st['code']!=3:
             image = container.image
             # 拉取镜像
             image.status = Image.PULLING
@@ -288,7 +301,7 @@ class ContainerViewSet(viewsets.ViewSet):
                     pr = json.loads(line)
                     status = pr.get("status","")
                     p_id=pr.get("id","")
-                    print json.dumps(pr,indent=4)
+                    # print json.dumps(pr,indent=4)
                     #保存状态
                     if "Pulling from" not in status and len(p_id)==12:
                         progress = Progress.objects.get_or_create(image=image,pid=p_id)[0]
@@ -338,9 +351,13 @@ class ContainerViewSet(viewsets.ViewSet):
                 return redirect(reverse('container-progress',args=[pk],request=request))
         except errors.APIError,e:
             if e.response.status_code==404:
-                image=container.image
-                image.status=Image.CREATING
-                image.save()
+                if "No such container" in e.explanation:
+                    container.status=Container.CREATING
+                    container.save()
+                else:
+                    image=container.image
+                    image.status=Image.CREATING
+                    image.save()
 
             return Response({"reason":e.response.reason,
                     "detail":e.explanation},status=e.response.status_code)

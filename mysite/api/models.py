@@ -210,7 +210,7 @@ class Progress(models.Model):
 	def __unicode__(self):
 		return self.id
 	def getDetail(self):
-		result={"current":1,"total":1}
+		result={}
 		if len(self.detail)>0:
 
 			result=json.loads(self.detail)

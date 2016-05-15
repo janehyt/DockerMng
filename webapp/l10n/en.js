@@ -4,6 +4,7 @@
 	    "HEADER" : "Navigation",
 	    "DASHBOARD" : "Dashboard",
 	    "SETTINGS": "Settings",
+	    "RESET": "Reset Password",
 	    "LOGOUT": "Logout",
 	    "APPLICATIONS": "Applications",
 	    "REPO": "Repositories",

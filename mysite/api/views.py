@@ -98,8 +98,8 @@ class ContainerViewSet(viewsets.ViewSet):
 
     def list(self, request):
         pagination = self.pagination_class()
-
-        queryset = Container.objects.filter(user=request.user)
+        query = request.query_params.get("query","")
+        queryset = Container.objects.filter(user=request.user,name__contains=query)
 
         data = pagination.paginate_queryset(queryset,request)
 

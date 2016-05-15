@@ -53,8 +53,8 @@ app.controller('NavCtrl',['$scope',function($scope){
 			sref: "app.file"
 		},
 		{
-			name: "Settings",
-			translate: "aside.nav.SETTINGS",
+			name: "Reset Password",
+			translate: "aside.nav.RESET",
 			icon: "glyphicon-cog text-info-dker",
 			sref: "app.settings"
 

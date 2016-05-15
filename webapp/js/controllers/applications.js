@@ -8,7 +8,7 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 				$scope.page.page){
 				$scope.page.page=1
 			}
-			url="api/containers?page_size="+$scope.page.page_size+
+			url="api/containers?query="+$scope.page.query+"&page_size="+$scope.page.page_size+
 				"&page="+$scope.page.page;
 		}
 		$scope.containers.previous=null;
@@ -46,6 +46,9 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 	}
 	$scope.search = function(query){
 		console.info(query);
+		$scope.page.page=1;
+		$scope.page.query=query;
+		$scope.loadData();
 	}
 	$scope.create = function(){
 		$state.go('app.repos');
@@ -122,7 +125,7 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 
 	$scope.title="应用管理";
 	$scope.containers=[];
-	$scope.page={page:1,page_size:10,count:1}
+	$scope.page={page:1,page_size:10,count:1,query:""}
 	$scope.loadData();
 	
 

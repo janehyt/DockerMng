@@ -1,5 +1,5 @@
-app.controller('FileCtrl',['$scope','$http','FileUploader','$modal',
-  function($scope,$http,FileUploader,$modal){
+app.controller('FileCtrl',['$scope','$http','FileUploader','$modal','$timeout',
+  function($scope,$http,FileUploader,$modal,$timeout){
 
     $scope.loadFiles = function(){
       $http.get("api/files").then(function(response){
@@ -85,8 +85,13 @@ app.controller('FileCtrl',['$scope','$http','FileUploader','$modal',
     });
 
     uploader.onCompleteItem = function(fileItem, response, status, headers) {
-        // console.info('onCompleteItem', fileItem, response, status, headers);
-        fileItem.remove();
+       
+        if(status==204){
+          $timeout(function(){fileItem.remove()},1000);
+        }else if(status=403){
+          fileItem.error="存在同名文件，不能上传";
+        }
+         console.info('onCompleteItem', fileItem, response, status, headers);
         // toaster.pop("success","上传成功");
     };
 

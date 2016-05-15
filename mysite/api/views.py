@@ -93,6 +93,34 @@ class UserViewSet(viewsets.ModelViewSet):
         
 
         return Response("原密码错误",status=404)
+    @list_route()
+    def overview(self,request):
+        user = request.user
+        result={
+            "images":user.image.count(),
+            "containers":{"total":user.container.count(),"running":0,"error":0,"exited":0,"no_instance":user.container.count()},
+            "files_size":files.dirSize(files.getUploadDir(str(user)))
+        }
+        cli = DockerClient().getClient()
+        containers = user.container.all()
+        try:
+            docker=cli.version()
+        except errors.APIError:
+            pass
+        else:
+            result["docker"]={"version":docker["Version"],"api":docker["ApiVersion"]}
+
+        for c in containers:
+            try:
+                sta = cli.inspect_container(c.name)["State"]["Status"]
+            except errors.NotFound:
+                pass
+            else:
+                result["containers"]["no_instance"]-=1
+                if sta in result["containers"]:
+                    result["containers"][sta]+=1
+
+        return Response(result)
 
     @list_route()
     def log_out(self, request):
@@ -252,7 +280,7 @@ class ContainerViewSet(viewsets.ViewSet):
         user = request.user
         data['user'] = user.id
         if data.get('volumes'):
-            data['volumes'] = files.resolveVolumes(volumes=data.get('volumes'),path=str(user),name=data.get('name'))
+            data['volumes'] = files.resolveVolumes(volumes=data.get('volumes'),path=files.getUploadDir(str(user)),name=data.get('name'))
         serializer = ContainerSerializer(data=data)
         if serializer.is_valid():
             valid_data = serializer.data
@@ -569,7 +597,7 @@ class FileViewSet(viewsets.ViewSet):
         #     path = request.user.username+"/"+path
         # else:
         #     path = request.user.username
-        file_list = files.fileList(request.user.username)
+        file_list = files.fileList(files.getUploadDir(request.user.username))
         if file_list:
             return Response(file_list)
         return Response(status=404);
@@ -577,7 +605,7 @@ class FileViewSet(viewsets.ViewSet):
     # 上传文件
     def create(self, request,format=None):
         file_obj = request.data['file']
-        status = files.fileUpload(str(file_obj),file_obj,request.user.username)
+        status = files.fileUpload(str(file_obj),file_obj,files.getUploadDir(request.user.username))
         
         # ...
         # do some stuff with uploaded file

@@ -20,7 +20,7 @@ class Image(models.Model):
 		choices=STATUS_CHOICES,
 		default=CREATING)
 	tag = models.CharField(max_length = 30)
-	users = models.ManyToManyField(User)
+	users = models.ManyToManyField(User,related_name="image")
 	created = models.DateTimeField(auto_now_add=True)
 	updated = models.DateTimeField(auto_now=True)
 	class Meta:
@@ -69,12 +69,12 @@ class Container(models.Model):
 		default=CREATING)
 	command = models.CharField(max_length = 150,default="",blank=True)
 	ports = models.CharField(max_length = 150,default="",blank=True)
-	volumes = models.CharField(max_length = 150,default="",blank=True)
+	volumes = models.TextField(default="",blank=True)
 	links = models.CharField(max_length = 150,default="",blank=True)
 	envs = models.CharField(max_length = 150,default="",blank=True)
 	restart = models.BooleanField(default=False)
-	image = models.ForeignKey(Image,on_delete=models.CASCADE)
-	user = models.ForeignKey(User,on_delete=models.CASCADE,verbose_name="owner")
+	image = models.ForeignKey(Image,on_delete=models.CASCADE,related_name="container")
+	user = models.ForeignKey(User,on_delete=models.CASCADE,verbose_name="owner",related_name="container")
 	
 	created = models.DateTimeField(auto_now_add=True)
 	updated = models.DateTimeField(auto_now=True)

@@ -72,12 +72,6 @@ angular.module('app')
               .state('app.reset', {
                   url: '/reset',
                   templateUrl: 'app/views/reset.html',
-                  resolve: {
-                      deps: ['$ocLazyLoad',
-                        function( $ocLazyLoad){
-                          return $ocLazyLoad.load('toaster');
-                      }]
-                  }
               })
               // .state('app.applications',{
               //   url: '/applications',

@@ -1,5 +1,5 @@
-app.controller('ResetCtrl',['$scope','$http','toaster','$timeout','$state',
-	function($scope,$http,toaster,$timeout,$state){
+app.controller('ResetCtrl',['$scope','$http','$timeout','$state',
+	function($scope,$http,$timeout,$state){
 
 		$scope.reset=function(){
 			$scope.error="";

@@ -10,9 +10,10 @@ def removeDirs(path):
 		# print "remove dir"
 		shutil.rmtree(path)
 
+#参数分别为volumes参数，用户目录，容器名称
 def resolveVolumes(volumes,path,name):
 	results = ""
-	con_path=os.path.join(getUploadDir(path),name)
+	con_path=os.path.join(path,name)
 	removeDirs(con_path)
 	if len(volumes)>0:
 		vs = volumes.split(",")
@@ -24,7 +25,7 @@ def resolveVolumes(volumes,path,name):
 					results+=gs[0]+":"+gs[1]+","
 					continue
 				#上传文件，处理
-				tmp=os.path.join(getUploadDir(path),gs[0])
+				tmp=os.path.join(path,gs[0])
 				if os.path.isfile(tmp):
 					# print tmp
 					filePath = resolveFile(tmp,con_path)
@@ -53,12 +54,12 @@ def resolveFile(filename,path):
 		shutil.copyfile(filename,path)
 	# unzip_dir(filename,path)
 	return path
-
+#文件上传
 def fileUpload(filename,file,path):
-	upload_dir = getUploadDir(path)
-	if not os.path.exists(upload_dir):
-	    os.makedirs(upload_dir)
-	filename = upload_dir+"/"+filename
+	# upload_dir = getUploadDir(path)
+	if not os.path.exists(path):
+	    os.makedirs(path)
+	filename = path+"/"+filename
 	if os.path.exists(filename):
 	    return 403
 
@@ -70,13 +71,14 @@ def fileUpload(filename,file,path):
 	        # ...
 	return 204
 
+#文件列表
 def fileList(path):
-	upload_dir = getUploadDir(path)
-	if os.path.exists(upload_dir) and os.path.isdir(upload_dir):
-		dir_list = os.listdir(upload_dir)
+	# upload_dir = getUploadDir(path)
+	if os.path.exists(path) and os.path.isdir(path):
+		dir_list = os.listdir(path)
 		result = []
 		for p in dir_list:
-			full = os.path.join(upload_dir,p)
+			full = os.path.join(path,p)
 			if os.path.isfile(full):
 				item = {"name":p,"size":os.path.getsize(full)}
 				result.append(item)
@@ -108,3 +110,11 @@ def destroyFile(filename):
 		os.remove(filename)
 		return 204
 	return 403
+
+def dirSize(path):
+	size = 0
+	if os.path.isdir(path):
+		for root , dirs, files in os.walk(path, True):
+			print files
+			size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
+	return size

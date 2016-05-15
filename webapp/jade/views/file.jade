@@ -38,6 +38,7 @@ div(ng-controller="FileCtrl")
 													i.glyphicon.glyphicon-ban-circle
 												span.text-danger(ng-show="item.isError")
 													i.glyphicon.glyphicon-remove
+													| {{item.error}}
 											td(nowrap="")
 												button.btn.btn-success(type="button",ng-click="item.upload()",ng-disabled="item.isReady||item.isUploading||item.isSuccess") 上传
 												button.btn.btn-warning(type="button",ng-click="item.cancel()",ng-disabled="!item.isUploading") 取消

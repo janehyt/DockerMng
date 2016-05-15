@@ -111,6 +111,7 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 					$scope.loadData();
 				// }
 				toaster.pop("success",a.name,"操作成功");
+				console.info("ok")
 			},
 			function(x){
 				console.info(x);

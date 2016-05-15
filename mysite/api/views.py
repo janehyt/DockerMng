@@ -99,7 +99,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def overview(self,request):
         user = request.user
         result={
-            "images":user.image.count(),
+            "images":user.image.filter(status=Image.EXISTED).count(),
             "containers":{"total":user.container.count(),"pie":{"running":0,"error":0,"exited":0,"no_instance":user.container.count()}},
             "files_size":files.dirSize(files.getUploadDir(str(user))),
             "user":str(user)
@@ -602,6 +602,18 @@ class ImageViewSet(viewsets.ModelViewSet):
     queryset = Image.objects.all().order_by('-created')
     serializer_class = ImageSerializer
     pagination_class = StandardResultsSetPagination
+
+    def list(self, request):
+        pagination = self.pagination_class()
+        query = request.query_params.get("query","")
+        queryset = Image.objects.filter(users=request.user,name__contains=query,status=Image.EXISTED)
+
+        data = pagination.paginate_queryset(queryset,request)
+
+        serializer = ImageSerializer(data,many=True,context={'request': request})
+        images = serializer.data
+        
+        return pagination.get_paginated_response(images)
 
     # def list(self, request):
         

@@ -30,7 +30,7 @@ div(ng-controller="ApplicationDetailCtrl")
 				
 			.panel-body
 				tabset.tab-container
-					tab()
+					tab(select="setStat(false)")
 						tab-heading 个人配置
 						form.form-horizontal
 							.form-group
@@ -125,7 +125,7 @@ div(ng-controller="ApplicationDetailCtrl")
 													td {{v.key}}
 										p.text-center.text-danger(ng-if="empty(data.config.volumes)")
 											strong 未自定义Volume挂载
-					tab(ng-if="data.inspect")
+					tab(ng-if="data.inspect",select="setStat(false)")
 						tab-heading 实例信息
 						form.form-horizontal
 							.form-group
@@ -217,8 +217,35 @@ div(ng-controller="ApplicationDetailCtrl")
 								.col-sm-8
 									p.form-control-static
 										span.label.label-info {{inspect.ip}}
+					tab(ng-if="data.status.detail=='running'",select="setStat(true)")
+						tab-heading 监控信息
+						.wrapper
+							.table-responsive
+								table.table
+									thead
+										th CPU
+										th 内存
+										th 网络I/O
+										th Block I/O
+									tbody
+										tr(ng-show="!empty(status)")
+											td  {{(status.cpu.total*100.0/status.cpu.system).toFixed(2)}}%
+											td {{status.memory.usage|size}}/{{status.memory.limit|size}}
+											td {{status.network.read|size}}/{{status.network.write|size}}
+											td {{status.block.Read|size}}/
+											{{status.block.Write|size}}
 
-
+							.row
+								.col-sm-6
+									.panel.panel-default
+										.panel-heading.font-bold 内存占用
+										.panel-body
+											div(id="memoryPie",style="height:240px")
+								.col-sm-6
+									.panel.panel-default
+										.panel-heading.font-bold CPU模式
+										.panel-body
+											div(id="cpuPie",style="height:240px")
 
 							
 

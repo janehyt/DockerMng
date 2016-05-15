@@ -11,16 +11,19 @@ angular.module('app')
     }
   });
 
+
  app.filter('size',function(){
  	return function(size){
  		if(!size)
  			return "0.00 B"
- 		if(size<1024)
+ 		if(size<1000)
  			return size.toFixed(2)+" B";
- 		if(size<1048576)
- 			return (size/1024).toFixed(2)+" KB";
+ 		if(size<1000000)
+ 			return (size/1000).toFixed(2)+" KB";
+ 		if(size<1000000000)
+ 			return (size/1000000).toFixed(2)+" MB"
 
- 		return (size/1048576).toFixed(2)+" MB";
+ 		return (size/1000000000).toFixed(2)+" GB";
  	}
  }).filter('time',function(){
  	return function(data){

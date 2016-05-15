@@ -1,5 +1,28 @@
 app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$state){
 	// uiLoad.load('app/vendor/libs/moment.min.js');
+	
+	$scope.loadImages=function(url){
+		if(!url){
+			if(Math.ceil($scope.page.images.count/$scope.page.images.page_size)<
+				$scope.page.images.page){
+				$scope.page.images.page=1
+			}
+			url = "api/images?query="+$scope.page.images.query+"&page_size="+$scope.page.images.page_size+
+				"&page="+$scope.page.images.page;
+		}
+		$scope.images.next=null;
+		$scope.images.previous=null;
+		$http.get(url)
+			.then(function(response){
+				$scope.images=response.data;
+				$scope.page.images.count=$scope.images.count;
+				$scope.page.images.page=$scope.getPageFromUrl(url);
+				console.info($scope.images);
+			},function(response){
+				console.info(response);
+			});
+	}
+
 	$scope.loadData=function(url){
 		if(!url){
 			if(Math.ceil($scope.page.repos.count/$scope.page.repos.page_size)<
@@ -49,6 +72,14 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 		}else
 			$state.go('app.repo',{name:name,namespace:"library"});
 	}
+
+	$scope.publish=function(name){
+		if(name.indexOf("/")!=-1){
+			var list = name.split("/");
+			$state.go('app.publish',{name:list[1],namespace:list[0],tag:"latest"});
+		}else
+			$state.go('app.publish',{name:name,namespace:"library",tag:"latest"});
+	}
 	$scope.search=function(data){
 		if(data&&data.length!=0){
 			$scope.page.results={
@@ -59,6 +90,17 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 			}
 			$scope.loadResults();
 		}
+	}
+	$scope.searchImage=function(data){
+		$scope.page.images={
+			page:1,
+			page_size:10,
+			query:data,
+			count:1
+		}
+			
+			$scope.loadImages();
+		
 	}
 	$scope.loadResults = function(url){
 		if(!url){
@@ -86,6 +128,7 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 	$scope.title="镜像仓库";
 	$scope.repos={};
 	$scope.results={};
+	$scope.images={};
 	$scope.page={
 		repos:{
 			page:1,
@@ -93,6 +136,12 @@ app.controller('RepoListCtrl',['$scope','$http','$state',function($scope,$http,$
 			count:1
 		},
 		results:{
+			page:1,
+			page_size:10,
+			query:"",
+			count:1
+		},
+		images:{
 			page:1,
 			page_size:10,
 			query:"",

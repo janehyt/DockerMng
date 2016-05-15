@@ -374,239 +374,293 @@ app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficia
 
 }]);
 
-app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$modal','toaster',
-	function($scope,$http,$state,$timeout,$modal,toaster){
-
-	$scope.empty=function(data){
-		if(data){
-			for(var d in data)
-				return false;
-		}
-		return true
-	}
-	$scope.loadData=function(){	
-		$http.get($scope.url).then(
-			function(response){
-				console.info(response.data);
-				$scope.data=response.data;
-				$scope.name=$scope.data.name;
-				if($scope.data.status.code==2){
-					$scope.progress();
-				}
-				$scope.resolveInspect();
-			},
-			function(x){
-				console.info(x);
-			}
-		);
-	}
-	$scope.progress=function(){
-		
-				$http.get($scope.url+"progress").then(
-					function(response){
-						
-						var progress=response.data;
-						$scope.calcuProgress(progress);
-						if(progress!='OK'&&$state.current.name=='app.application'){
-							$timeout(
-								function(){
-									$scope.progress();
-							},2000
-							);
-						}else if(progress=='OK'){
-							$scope.loadData();
-						}
-					},
-					function(x){
-						console.info(x);
-					}
-
-				)
-			
-		
-	}
-	$scope.stateClass = function(status){
-		if(status=="running")
-			return "label-success"
-		else if(status=="existed"||status=="exited")
-			return "label-danger"
-		else if(status=="paused"||status=="pulling image")
-			return "label-warning"
-		else
-			return "label-default"
-	}
-	$scope.delete=function(){
-
-		var modalIns = $modal.open({
-			templateUrl: 'app/views/template/delete.html',
-			controller: 'ModalDelCtrl',
-			resolve:{
-			  name:function(){
-			    return $scope.name;
-			  }
-			}
-		});
-		modalIns.result.then(function(){
-		// var params = {filename:name,newname:data}
-			$http.delete($scope.url).then(
+app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$modal','toaster','uiLoad','JQ_CONFIG',
+	function($scope,$http,$state,$timeout,$modal,toaster,uiLoad,JQ_CONFIG){
+		// 监控相关
+		$scope.stat=function(){
+			// console.info($scope.loadStat)
+			$http.get($scope.url+"stat/").then(
 				function(response){
 					console.info(response.data);
-					toaster.pop("success","删除成功","应用"+$scope.name+"已成功移除！");
-					$state.go("app.applications");
+					$scope.status=response.data;
+					$scope.drawCharts(response.data);
+					
+
+				},function(x){
+
+				});
+		}
+		$scope.setStat=function(data){
+			// console.info($scope.loadStat)
+			$scope.loadStat=data;
+			if(data==true){
+				$scope.stat();
+			}
+		}
+
+		$scope.drawCharts=function(data){
+			var memory=[{label:"free",data:data.memory.limit-data.memory.usage},{label:"usage",data:data.memory.usage}]
+			var cpu=[{},{},
+				{label:"usermode",data:data.cpu.usermode},
+				{label:"kernelmode",data:data.cpu.kernelmode}]
+			if($scope.loadStat&&$state.current.name=='app.application'){
+				$.plot("#memoryPie",memory,$scope.pieOption);
+				$.plot("#cpuPie",cpu,$scope.pieOption);
+
+
+				// $timeout(function() {$scope.stat()}, 5000);
+			}
+			
+		}
+
+		
+
+		$scope.empty=function(data){
+			if(data){
+				for(var d in data)
+					return false;
+			}
+			return true
+		}
+		// 载入数据
+		$scope.loadData=function(){	
+			$http.get($scope.url).then(
+				function(response){
+					console.info(response.data);
+					$scope.data=response.data;
+					$scope.name=$scope.data.name;
+					if($scope.data.status.code==2){
+						$scope.progress();
+					}
+					$scope.resolveInspect();
 				},
 				function(x){
 					console.info(x);
-					toaster.pop("danger",x.status,x.data);
 				}
 			);
-		},function(){
-		console.info("dismiss");
-		})
-
-		
-	}
-	$scope.action=function(a){
-		// var m = a.url.indexOf("pull_image/")
-		var load = true;
-		$http.get(a.url).then(
-			function(response){
-				console.info(response.data);
-				load=false;
-				// if(m!=a.url.length-11){
-					$scope.loadData();
-				// }
-				toaster.pop("success",a.name,"操作成功");
-			},
-			function(x){
-				console.info(x);
-				toaster.pop("error",x.status,x.data);
-				$scope.loadData();
-			}
-		);
-		// 仅初次pull重新载入
-		
-			$timeout(function() {if(load){$scope.loadData()}}, 1000);
-		
-	}
-	$scope.calcuProgress=function(data){
-		var total=0;
-		var count = data.length;
-		for(var p in data){
-			if(data[p].status){
-				if(data[p].status=="Pull complete"||data[p].status=="Download complete"||data[p].status.indexOf("Verifying")!=-1){
-					total+=1;
-				}
-				else if(data[p].detail.current&&data[p].detail.total){
-					total+=data[p].detail.current/data[p].detail.total
-				}
-			}
 		}
-		if(count>0)
-			$scope.progressData=(total/count).toFixed(2)*100;
-		// console.info($scope.progressData);
-	}
-	$scope.resolveInspect=function(){
-		var data = $scope.data;
-		if(data.inspect){
-			$scope.inspect={
-				cmd:data.inspect.Config.Cmd,
-				created:data.inspect.Created,
-				started:data.inspect.State.StartedAt,
-				finished:data.inspect.State.FinishedAt,
-				ports:{},
-				envs:{},
-				ip:data.inspect.NetworkSettings.IPAddress,
-				volumes:{},
-				links:{}
-			}
-			var ports = data.inspect.Config.ExposedPorts;
-			for(var p in ports){
-				var detail="未知"
-				if(data.inspect.NetworkSettings.Ports){
-					var detail=data.inspect.NetworkSettings.Ports[p];
-					if(!$scope.empty(detail)){
-						detail=detail[0].HostIp+":"+detail[0].HostPort
-					}else{
-						detail="内部访问"
+		// 进度相关
+		$scope.progress=function(){
+			
+					$http.get($scope.url+"progress").then(
+						function(response){
+							
+							var progress=response.data;
+							$scope.calcuProgress(progress);
+							if(progress!='OK'&&$state.current.name=='app.application'){
+								$timeout(
+									function(){
+										$scope.progress();
+								},2000
+								);
+							}else if(progress=='OK'){
+								$scope.loadData();
+							}
+						},
+						function(x){
+							console.info(x);
+						}
+
+					)
+				
+			
+		}
+		$scope.stateClass = function(status){
+			if(status=="running")
+				return "label-success"
+			else if(status=="existed"||status=="exited")
+				return "label-danger"
+			else if(status=="paused"||status=="pulling image")
+				return "label-warning"
+			else
+				return "label-default"
+		}
+		$scope.delete=function(){
+
+			var modalIns = $modal.open({
+				templateUrl: 'app/views/template/delete.html',
+				controller: 'ModalDelCtrl',
+				resolve:{
+				  name:function(){
+				    return $scope.name;
+				  }
+				}
+			});
+			modalIns.result.then(function(){
+			// var params = {filename:name,newname:data}
+				$http.delete($scope.url).then(
+					function(response){
+						console.info(response.data);
+						toaster.pop("success","删除成功","应用"+$scope.name+"已成功移除！");
+						$state.go("app.applications");
+					},
+					function(x){
+						console.info(x);
+						toaster.pop("danger",x.status,x.data);
+					}
+				);
+			},function(){
+			console.info("dismiss");
+			})
+
+			
+		}
+		$scope.action=function(a){
+			// var m = a.url.indexOf("pull_image/")
+			var load = true;
+			$http.get(a.url).then(
+				function(response){
+					console.info(response.data);
+					load=false;
+					// if(m!=a.url.length-11){
+						$scope.loadData();
+					// }
+					toaster.pop("success",a.name,"操作成功");
+				},
+				function(x){
+					console.info(x);
+					toaster.pop("error",x.status,x.data);
+					$scope.loadData();
+				}
+			);
+			// 仅初次pull重新载入
+			
+				$timeout(function() {if(load){$scope.loadData()}}, 1000);
+			
+		}
+		$scope.calcuProgress=function(data){
+			var total=0;
+			var count = data.length;
+			for(var p in data){
+				if(data[p].status){
+					if(data[p].status=="Pull complete"||data[p].status=="Download complete"||data[p].status.indexOf("Verifying")!=-1){
+						total+=1;
+					}
+					else if(data[p].detail.current&&data[p].detail.total){
+						total+=data[p].detail.current/data[p].detail.total
 					}
 				}
-				
-				$scope.inspect.ports[p]={port:p,detail:detail}
 			}
-			var envs = data.inspect.Config.Env;
-			for(var e in envs){
-				var en = envs[e].split("=");
-				if(en.length==2)
-					$scope.inspect.envs[en[0]]={key:en[0],value:en[1]};
-			}
-			if(!$scope.inspect.ip){
-				$scope.inspect.ip="未知"
-			}
-			var links = data.inspect.HostConfig.Links;
-			for(var l in links){
-				var ln=links[l].split(":");
-				if(ln.length==2){
-					var name = ln[0].substring(1);
-					$scope.inspect.links[name]=data.config.links[name]
-				}
-			}
-			var volumes = data.inspect.Mounts;
-			for(var v in volumes){
-				var de = volumes[v].Destination;
-				var sr = volumes[v].Source;
-				if(data.config.volumes[de]){
-					sr = data.config.volumes[de].value
-				}else{
-					sr = "docker volume挂载"
-				}
-				$scope.inspect.volumes[de]={key:de,value:sr}
-
-			}
-
+			if(count>0)
+				$scope.progressData=(total/count).toFixed(2)*100;
+			// console.info($scope.progressData);
 		}
-	}
+		$scope.resolveInspect=function(){
+			var data = $scope.data;
+			if(data.inspect){
+				$scope.inspect={
+					cmd:data.inspect.Config.Cmd,
+					created:data.inspect.Created,
+					started:data.inspect.State.StartedAt,
+					finished:data.inspect.State.FinishedAt,
+					ports:{},
+					envs:{},
+					ip:data.inspect.NetworkSettings.IPAddress,
+					volumes:{},
+					links:{}
+				}
+				var ports = data.inspect.Config.ExposedPorts;
+				for(var p in ports){
+					var detail="未知"
+					if(data.inspect.NetworkSettings.Ports){
+						var detail=data.inspect.NetworkSettings.Ports[p];
+						if(!$scope.empty(detail)){
+							detail=detail[0].HostIp+":"+detail[0].HostPort
+						}else{
+							detail="内部访问"
+						}
+					}
+					
+					$scope.inspect.ports[p]={port:p,detail:detail}
+				}
+				var envs = data.inspect.Config.Env;
+				for(var e in envs){
+					var en = envs[e].split("=");
+					if(en.length==2)
+						$scope.inspect.envs[en[0]]={key:en[0],value:en[1]};
+				}
+				if(!$scope.inspect.ip){
+					$scope.inspect.ip="未知"
+				}
+				var links = data.inspect.HostConfig.Links;
+				for(var l in links){
+					var ln=links[l].split(":");
+					if(ln.length==2){
+						var name = ln[0].substring(1);
+						$scope.inspect.links[name]=data.config.links[name]
+					}
+				}
+				var volumes = data.inspect.Mounts;
+				for(var v in volumes){
+					var de = volumes[v].Destination;
+					var sr = volumes[v].Source;
+					if(data.config.volumes[de]){
+						sr = data.config.volumes[de].value
+					}else{
+						sr = "docker volume挂载"
+					}
+					$scope.inspect.volumes[de]={key:de,value:sr}
 
-	$scope.title="应用列表";
-	$scope.name="";
-	$scope.url="api/containers/"+$state.params.id+"/";
-	$scope.data={};
-	$scope.inspect={}
-	$scope.progressData=0;
-	$scope.btnStyle={
-		"start": {
-			"btn":"btn-success",
-			"icon":"fa-play"
-		},
-		"create":  {
-			"btn":"btn-success",
-			"icon":"fa-plus"
-		},
-		"recreate":  {
-			"btn":"btn-primary",
-			"icon":"fa-refresh"
-		},
-		"stop":  {
-			"btn":"btn-danger",
-			"icon":"fa-stop"
-		},
-		"delete":  {
-			"btn":"btn-danger",
-			"icon":"fa-trash-o"
-		},
-		"pause":  {
-			"btn":"btn-warning",
-			"icon":"fa-pause"
-		},
-		"unpause":  {
-			"btn":"btn-success",
-			"icon":"fa-play"
-		},
-		"restart":  {
-			"btn":"btn-primary",
-			"icon":"fa-refresh"
+				}
+
+			}
 		}
-	}
-	$scope.loadData();
+
+		$scope.loadStat=false;
+
+		$scope.title="应用列表";
+		$scope.name="";
+		$scope.url="api/containers/"+$state.params.id+"/";
+		$scope.data={};
+		$scope.inspect={};
+		$scope.status={}
+		$scope.progressData=0;
+		$scope.pieOption={
+                series: { pie: { show: true, innerRadius: 0.5, stroke: { width: 0 }, label: { show: true, threshold: 0.05 } } },
+                colors: [$scope.app.color.success,$scope.app.color.warning,$scope.app.color.info,$scope.app.color.danger],
+                grid: { hoverable: true, clickable: true, borderWidth: 0, color: '#ccc' },   
+                tooltip: true,
+                tooltipOpts: { content: '%s: %p.0%' }
+              }
+		$scope.btnStyle={
+			"start": {
+				"btn":"btn-success",
+				"icon":"fa-play"
+			},
+			"create":  {
+				"btn":"btn-success",
+				"icon":"fa-plus"
+			},
+			"recreate":  {
+				"btn":"btn-primary",
+				"icon":"fa-refresh"
+			},
+			"stop":  {
+				"btn":"btn-danger",
+				"icon":"fa-stop"
+			},
+			"delete":  {
+				"btn":"btn-danger",
+				"icon":"fa-trash-o"
+			},
+			"pause":  {
+				"btn":"btn-warning",
+				"icon":"fa-pause"
+			},
+			"unpause":  {
+				"btn":"btn-success",
+				"icon":"fa-play"
+			},
+			"restart":  {
+				"btn":"btn-primary",
+				"icon":"fa-refresh"
+			}
+		}
+		
+
+		uiLoad.load(JQ_CONFIG["plot"]).then(function(){
+			$scope.loadData();
+		});
 	
 	
 

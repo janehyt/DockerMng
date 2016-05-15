@@ -1,8 +1,7 @@
 # -*- coding: UTF-8 -*- 
 from docker import Client
 from mysite import settings as settings
-import json
-import requests
+import json,requests,datetime,calendar
 # import os
 # import random
 
@@ -36,6 +35,7 @@ class DockerClient(object):
 			data["cpu"]=self.__solve_cpu(d.get("cpu_stats"))
 			data["memory"]=self.__solve_memory(d.get("memory_stats"))
 			data["network"]=self.__solve_net(d.get("networks"))
+			data["time"] = calendar.timegm(datetime.datetime.now().timetuple())*1000
 
 		return data
 	def __solve_block(self,block):

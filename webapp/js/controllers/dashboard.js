@@ -6,7 +6,7 @@ app.controller('DashboardCtrl',['$scope','$http','uiLoad','JQ_CONFIG',
 		$scope.loadData=function(){
 			$http.get("api/users/overview/").then(
 				function(response){
-					console.info(response.data);
+					// console.info(response.data);
 					$scope.data=response.data;
 					// var date=$scope.data.containers.date;
 					$scope.drawDateContainer($scope.data.containers.date);
@@ -33,12 +33,12 @@ app.controller('DashboardCtrl',['$scope','$http','uiLoad','JQ_CONFIG',
 			var array=new Array(data.length);
 			var i =0;
 			for(var key in data){
-				console.info(key);
+				// console.info(key);
 				array[i]={label:key,data:data[key]};
 				i++;
 			}
 			$scope.pie[0]=array;
-			console.info(array);
+			// console.info(array);
 			$.plot("#pieChart",$scope.pie[0],$scope.pie[1]);
 		}
 

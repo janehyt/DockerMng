@@ -11,17 +11,17 @@ div(ng-controller="ResetCtrl")
 					.form-group
 						label.col-sm-2.control-label 原密码
 						.col-sm-8
-							input.form-control(type="password",ng-model="data.oldpass",required="",placeholder="Old password",name="oldpass")
+							input.form-control(type="password",ng-model="data.oldpass",required="",placeholder="请输入原密码",name="oldpass")
 							span.text-danger(ng-show="error&&error!=''") {{error}}
 					.form-group
 						label.col-sm-2.control-label 新密码
 						.col-sm-8
-							input.form-control(type="password",name="password",ng-model="data.password",required="",ui-validate="'$value!=data.oldpass'",ui-validate-watch="'data.oldpass'",placeholder="New password")
+							input.form-control(type="password",name="password",ng-model="data.password",required="",ui-validate="'$value!=data.oldpass'",ui-validate-watch="'data.oldpass'",placeholder="请输入新密码")
 							span.text-danger(ng-show="!ResetForm.password.$pristine&&ResetForm.password.$error.validator") 新密码与原密码不得相同
 					.form-group
 						label.col-sm-2.control-label 确认密码
 						.col-sm-8
-							input.form-control(type="password",placeholder="Confirm password",ng-model="confirm",required="",ui-validate="'$value==data.password'",ui-validate-watch="'data.password'",name="confirm")
+							input.form-control(type="password",placeholder="请重复输入新密码",ng-model="confirm",required="",ui-validate="'$value==data.password'",ui-validate-watch="'data.password'",name="confirm")
 							span.text-danger(ng-show="!ResetForm.confirm.$pristine&&ResetForm.confirm.$error.validator") 密码输入不一致!
 				footer.panel-footer.text-right.bg-light.lter
 					input.btn.btn-default(ng-disabled="ResetForm.$invalid",ng-click="reset()",type="submit",value="重设密码")

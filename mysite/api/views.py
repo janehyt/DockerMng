@@ -279,13 +279,32 @@ class ContainerViewSet(viewsets.ViewSet):
         else:
             res = Response(serializer.errors,status=406)
         return res
+    
+    @list_route()
+    def stats(self,request):
+        queryset = Container.objects.filter(user=request.user,status=Container.EXISTED)
+        
+        data={}
+        for c in queryset:
+            try:
+                d=DockerClient().getStats(container=c.name)
+            except errors.APIError,e:
+                if e.response.status_code==404:
+                    pass
+                else:
+                    return Response({"reason":e.response.reason,
+                        "detail":e.explanation},status=e.response.status_code)
+            else:
+                data[c.name]=d
+        # print data
+        return Response(data);
+
     @list_route()
     def names(self,request):
-        queryset = Container.objects.filter(user=request.user)
+        queryset = Container.objects.filter(user=request.user,status=Container.EXISTED)
         data=[]
         for c in queryset:
-            if c.getDetailStatus().get("code")==0:
-                data.append(c.name)
+            data.append(c.name)
         return Response(data)
 
     @detail_route()
@@ -439,19 +458,21 @@ class ContainerViewSet(viewsets.ViewSet):
         # print data
         return Response(data)
     @detail_route()
-    def stats(self,request,pk=None):
+    def stat(self,request,pk=None):
         container = get_object_or_404(self.queryset, pk=pk,user=request.user)
-        cli = DockerClient().getClient()
+        # cli = DockerClient().getClient()
         st = container.getDetailStatus()
         data = ContainerSerializer(container,context={'request':request}).data
         if st['code']==0:
             try:
-                data=cli.stats(container=container.name,stream=False)
+                data=DockerClient().getStats(container=container.name)
             except errors.APIError,e:
                 return Response({"reason":e.response.reason,
                     "detail":e.explanation},status=e.response.status_code)
+            else:
+                return Response(data)
         # print data
-        return Response(data)
+        return Response({"detail":"No instance to inspect"},status=404)
 
 class RepoViewSet(viewsets.ViewSet):
     def list(self,request):

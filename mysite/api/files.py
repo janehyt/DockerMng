@@ -10,10 +10,10 @@ def removeDirs(path):
 		# print "remove dir"
 		shutil.rmtree(path)
 
-#参数分别为volumes参数，用户目录，容器名称
+#参数分别为volumes参数，用户目录，容器名称,最终处理目录为path/containers/name
 def resolveVolumes(volumes,path,name):
 	results = ""
-	con_path=os.path.join(path,name)
+	con_path=os.path.join(path,'containers',name)
 	removeDirs(con_path)
 	if len(volumes)>0:
 		vs = volumes.split(",")

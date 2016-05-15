@@ -71,7 +71,7 @@ class Container(models.Model):
 	ports = models.CharField(max_length = 150,default="",blank=True)
 	volumes = models.TextField(default="",blank=True)
 	links = models.CharField(max_length = 150,default="",blank=True)
-	envs = models.CharField(max_length = 150,default="",blank=True)
+	envs = models.TextField(default="",blank=True)
 	restart = models.BooleanField(default=False)
 	image = models.ForeignKey(Image,on_delete=models.CASCADE,related_name="container")
 	user = models.ForeignKey(User,on_delete=models.CASCADE,verbose_name="owner",related_name="container")
@@ -148,7 +148,7 @@ class Container(models.Model):
 
 	def getBaseDir(self):
 		path = files.getUploadDir(str(self.user))
-		path = os.path.join(path,self.name)
+		path = os.path.join(path,'containers',self.name)
 		return path
 
 	def getDetailStatus(self):

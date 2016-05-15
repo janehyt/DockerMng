@@ -13,7 +13,8 @@ app.controller("SigninCtrl",['$scope',"$http","$state","$resource","$rootScope",
 				}else{
 					$scope.authError="";
 					$rootScope.user = response.data;
-					$state.go("app.dashboard");
+					window.location.reload();
+					// $state.go("app.dashboard");
 				}
 			},function(x){
 				if(x.data.detail&&x.data.detail.indexOf("CSRF")!=-1){

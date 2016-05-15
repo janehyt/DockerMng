@@ -77,6 +77,23 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response("验证出错",status=404)
 
+    @list_route(methods=['POST'],permission_classes=[AllowAny,])
+    def reset(self, request):
+        data = request.data
+        user = request.user
+        oldpass = data['oldpass']
+        password = data['password']
+        if auth.authenticate(username=user.username,password = oldpass):
+            user.set_password(password)
+            user.save()
+            # user = auth.authenticate(username=user.username,password = password)
+            # auth.login(request,user)
+            # print user.is_active
+            return Response(True)
+        
+
+        return Response("原密码错误",status=404)
+
     @list_route()
     def log_out(self, request):
         auth.logout(request)

@@ -5,7 +5,7 @@
 			strong Sign in to get in touch
 		form.form-validation(name="SignupForm")
 			.text-danger.wrapper.text-center(ng-show="authError") {{authError}}
-			.text-danger.wrapper.text-center(ng-show="SignupForm.confirm.$error.validator") Passwords do not match!	
+			.text-danger.wrapper.text-center(ng-show="!SignupForm.confirm.$pristine&&SignupForm.confirm.$error.validator") Password do not match!	
 			.list-group.list-group-sm
 				.list-group-item
 					input.form-control.no-border(type="text",placeholder="Username",ng-model="user.username",required="")

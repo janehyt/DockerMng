@@ -56,7 +56,7 @@ app.controller('NavCtrl',['$scope',function($scope){
 			name: "Reset Password",
 			translate: "aside.nav.RESET",
 			icon: "glyphicon-cog text-info-dker",
-			sref: "app.settings"
+			sref: "app.reset"
 
 		}
 	]

@@ -1,7 +1,8 @@
 # -*- coding: UTF-8 -*- 
-from django.db import models
+from django.db import models,connection
 from django.contrib.auth.models import User
 from . import files
+
 import os,random,json
 
 class Image(models.Model):
@@ -62,6 +63,7 @@ class Container(models.Model):
 		(EXISTED, 'Existed'),
 		(ERROR, 'Error')
 	)
+	SELECT_DAY={'day':connection.ops.date_trunc_sql('day','created')}
 
 	name = models.CharField(max_length = 150,unique=True)
 	status = models.CharField(max_length=2,

@@ -2,4 +2,40 @@ div(ng-controller="DashboardCtrl")
 	.bg-light.lter.b-b.wrapper-md
 		h1.m-n.font-thin.h3 {{title}}
 	.wrapper-md
+		.row.text-center
+			.col-sm-3
+				a.block.panel.padder-v.bg-warning.item(ui-sref="app.applications")
+					span.text-muted.h3.block(translate="aside.nav.APPLICATIONS") Applications
+					span.text-white.text-xs.block 已配置{{data.containers.total}} 个应用
+					span.text-muted.h1.w-full
+						i.glyphicon.icon.glyphicon-th-large
+			.col-sm-3
+				a.block.panel.padder-v.bg-success.item(ui-sref="app.repos")
+					span.text-muted.h3.block(translate="aside.nav.REPO") Repositories
+					span.text-white.text-xs.block 已使用过{{data.images}} 个镜像
+					span.text-muted.h1.w-full
+						i.glyphicon.icon.glyphicon-briefcase
+			.col-sm-3
+				a.block.panel.padder-v.bg-danger.item(ui-sref="app.file")
+					span.text-muted.h3.block(translate="aside.nav.FILE") Files
+					span.text-white.text-xs.block 占用{{data.files_size|size}}空间
+					span.text-muted.h1.w-full
+						i.glyphicon.icon.glyphicon-file
+			.col-sm-3
+				a.block.panel.padder-v.bg-info.item(ui-sref="app.reset")
+					span.text-muted.h3.block(translate="aside.nav.RESET") Reset Password
+					span.text-white.text-xs.block 用户名称-{{data.user}}
+					span.text-muted.h1.w-full
+						i.glyphicon.icon.glyphicon-cog
 		.row
+			.col-sm-6
+				.panel.panel-default
+					.panel-heading.font-bold 应用创建
+					.panel-body()
+						div(id="createChart",style="height:240px")
+
+			.col-sm-6
+				.panel.panel-default
+					.panel-heading.font-bold 应用状态
+					.panel-body
+						div(id="pieChart",style="height:240px")

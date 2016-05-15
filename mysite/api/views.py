@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404,redirect
 # Create your views here.
 from django.contrib.auth.models import User
 from django.contrib import auth
+from django.db.models import Count
+
 from collections import OrderedDict
 from rest_framework import viewsets
 from rest_framework.views import APIView
@@ -19,7 +21,7 @@ from .models import Container,Image,Progress
 from api import files
 from docker import errors
 from mysite import settings
-import os,json,markdown,time
+import os,json,markdown,calendar,datetime
 
 import sys
 reload(sys)
@@ -98,9 +100,21 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         result={
             "images":user.image.count(),
-            "containers":{"total":user.container.count(),"running":0,"error":0,"exited":0,"no_instance":user.container.count()},
-            "files_size":files.dirSize(files.getUploadDir(str(user)))
+            "containers":{"total":user.container.count(),"pie":{"running":0,"error":0,"exited":0,"no_instance":user.container.count()}},
+            "files_size":files.dirSize(files.getUploadDir(str(user))),
+            "user":str(user)
         }
+
+        date = user.container.extra(select=Container.SELECT_DAY).values('day').annotate(count=Count('id'))
+        
+        
+
+        # for d in date:
+        #     day=d.get("day").timetuple()
+        #     container_date.append([calendar.timegm(day) * 1000,d.get("count")])
+        result["containers"]["date"]=self.__resloveDate(date)
+
+
         cli = DockerClient().getClient()
         containers = user.container.all()
         try:
@@ -116,9 +130,9 @@ class UserViewSet(viewsets.ModelViewSet):
             except errors.NotFound:
                 pass
             else:
-                result["containers"]["no_instance"]-=1
-                if sta in result["containers"]:
-                    result["containers"][sta]+=1
+                result["containers"]["pie"]["no_instance"]-=1
+                if sta in result["containers"]["pie"]:
+                    result["containers"]["pie"][sta]+=1
 
         return Response(result)
 
@@ -131,6 +145,24 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_user(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+    def __resloveDate(self,date):
+        container_date=[]
+        today = datetime.datetime.today()
+        min_date=max_date=datetime.datetime(today.year,today.month,today.day)
+        # print today.year,today.month,today.day
+        if len(date)>0:
+            min_date=date[0]['day']
+        index=0
+        while min_date<=max_date:
+            count=0
+            for i in range(index,len(date)):
+                if(min_date==date[i].get("day")):
+                    count=date[i].get("count")
+                    index+=1
+                break;
+            container_date.append([calendar.timegm(min_date.timetuple())*1000,count])
+            min_date+=datetime.timedelta(1)
+        return container_date
 
     # @permission_classes(IsAuthenticated)
     # def list(self,request):

@@ -303,7 +303,7 @@ class ContainerViewSet(viewsets.ViewSet):
 
         
         return Response(ContainerSerializer(data,context={'request':request}).data)
-
+    
     def create(self,request):
         data = request.data
         nameFilter = Container.objects.filter(name=data.get('name'))     
@@ -676,3 +676,118 @@ class FileViewSet(viewsets.ViewSet):
             filename=os.path.join(path,filename)
             return Response(status=files.destroyFile(filename))
         return Response({"detail":"filename required"},status=406)
+
+    @list_route(methods=["POST"])
+    def volume_save(self,request):
+        params = request.data
+        cid=params.get("id","");
+        path = params.get("path","");
+        content = params.get("content",None);
+        if not content:
+            return Response({"detail": "content is required"},status=406)
+        if cid.isdigit():
+            container= get_object_or_404(Container.objects.all(), pk=cid,user=request.user)
+            base_dir = container.getBaseDir()
+            path = os.path.join(base_dir,path)
+            if os.path.exists(path):
+                flag=self.__validpath(path,container.volumeToManage())
+                if flag:      
+
+                     return Response(files.saveFile(path,content))
+                else:
+                    return Response({"detail":"not authenticated to given path"},status=403)
+            else:
+                return Response({"detail":"path not exists"},status=404)
+
+        else:
+
+            return Response({"detail": "id required and id should be integer"},status=406)
+
+    @list_route()
+    def volume_remove(self,request):
+        params = request.query_params;
+        cid=params.get("id","");
+        remove = params.get("path","");
+        
+        if cid.isdigit():
+            container= get_object_or_404(Container.objects.all(), pk=cid,user=request.user)
+            base_dir = container.getBaseDir()
+            path = os.path.join(base_dir,remove)
+            if os.path.exists(path):
+                flag=self.__validmodify(path,container.volumeToManage())
+                if flag:      
+                    return Response(status=files.destroyFile(path))
+                else:
+                    return Response({"detail":"not authenticated to remove "+remove},status=403)
+                    
+            else:
+                return Response({"detail":"path not exists"},status=404)
+
+        else:
+
+            return Response({"detail": "id required and id should be integer"},status=406)
+    @list_route()
+    def volume_rename(self,request):
+        params = request.query_params;
+        cid=params.get("id","");
+        rename = params.get("path","");
+        newname = params.get("newname","");
+        if len(rename)==0 or len(newname)==0:
+            return Response({"detail":"path and newname required"},status=406)
+        if cid.isdigit():
+            container= get_object_or_404(Container.objects.all(), pk=cid,user=request.user)
+            base_dir = container.getBaseDir()
+            path = os.path.join(base_dir,rename)
+            newname = os.path.join(base_dir,newname)
+            if os.path.exists(path):
+                flag=self.__validmodify(path,container.volumeToManage())
+                if flag:      
+                    return Response(status=files.renameFile(path,newname))
+                else:
+                    return Response({"detail":"not authenticated to rename "+rename},status=403)
+                    
+            else:
+                return Response({"detail":"path not exists"},status=404)
+
+        else:
+
+            return Response({"detail": "id required and id should be integer"},status=406)
+
+    @list_route()
+    def container(self,request):
+        cid = request.query_params.get("id","")
+        path = request.query_params.get("path","")
+        if cid.isdigit():
+            container= get_object_or_404(Container.objects.all(), pk=cid,user=request.user)
+            base_dir = container.getBaseDir()
+            path = os.path.join(base_dir,path)
+            
+            
+            if os.path.exists(path):
+                flag=self.__validpath(path,container.volumeToManage())
+                if flag:      
+
+                     return Response(files.getDetail(path))
+                else:
+                    return Response({"detail":"not authenticated to given path"})
+            else:
+                return Response({"detail":"path not exists"},status=404)
+        else:
+            return Response({"detail": "id required and id should be integer"},status=406)
+
+    def __validpath(self,path,volumes):
+        flag=False        
+                
+        for v in volumes:                    
+            if (os.path.isdir(v) and v in path) or (os.path.isfile(v) and os.path.samefile(v,path)):
+                flag=True
+                break
+        return flag
+
+    def __validmodify(self,path,volumes):
+        flag=False               
+        for v in volumes:                    
+            if os.path.isdir(v) and v in path:
+                flag=True
+                break
+        return flag

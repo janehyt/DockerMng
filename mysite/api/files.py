@@ -66,6 +66,7 @@ def fileUpload(filename,file,path):
 	with open(filename,'wb+') as destination:
 	    for chunk in file.chunks():
 	        destination.write(chunk)
+	    destination.close()
 	        # ...
 	        # do some stuff with uploaded file
 	        # ...
@@ -109,6 +110,9 @@ def destroyFile(filename):
 	if os.path.isfile(filename):
 		os.remove(filename)
 		return 204
+	elif os.path.isdir(filename):
+		removeDirs(filename)
+		return 204
 	return 403
 
 def dirSize(path):
@@ -117,3 +121,21 @@ def dirSize(path):
 		for root , dirs, files in os.walk(path, True):
 			size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
 	return size
+
+def getDetail(path):
+	if os.path.isdir(path):
+		dir_list = os.listdir(path)
+		result=[]
+		for p in dir_list:
+			full=os.path.join(path,p)
+			result.append({"name":p,"isdir":os.path.isdir(full),"isfile":os.path.isfile(full)})
+		return result
+	elif os.path.isfile(path):
+		all_the_text=open(path).read()
+		return {"content":all_the_text}
+
+def saveFile(path,content):
+	with open(path,"w") as des:
+		des.write(content)
+		des.close()
+	return True

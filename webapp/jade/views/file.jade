@@ -10,6 +10,25 @@ div(ng-controller="FileCtrl")
 					p.text-lt 注：上传文件中的删除仅从队列中移除文件
 			.panel-body
 				tabset.tab-container
+					tab(select="loadFiles()")
+						tab-heading 已有文件
+						.wrapper
+							.table-responsive
+								table.table.table-striped.b-t.b-light
+									thead
+										tr
+											th 名字
+											th 大小
+											th 操作
+									tbody
+										tr(ng-repeat="item in files")
+											td
+												strong {{item.name}}
+											td(nowrap="") {{item.size|size}}
+											td(nowrap="")
+												//- button.btn.btn-default.btn-xs(type="button",ng-click="download(item.name)") 下载
+												button.btn.btn-default(type="button",ng-click="rename(item.name)") 重命名
+												button.btn.btn-danger(type="button",ng-click="remove(item.name)") 删除
 					tab
 						tab-heading 上传队列
 						.wrapper
@@ -57,37 +76,3 @@ div(ng-controller="FileCtrl")
 									button.btn.btn-addon.btn-danger(type="button",ng-click="uploader.clearQueue()",ng-disabled="!uploader.queue.length")
 										i.fa.fa-trash-o
 										| 全部移除
-					tab(select="loadFiles()")
-						tab-heading 已有文件
-						.wrapper
-							.table-responsive
-								table.table.table-striped.b-t.b-light
-									thead
-										tr
-											th 名字
-											th 大小
-											th 操作
-									tbody
-										tr(ng-repeat="item in files")
-											td
-												strong {{item.name}}
-											td(nowrap="") {{item.size|size}}
-											td(nowrap="")
-												//- button.btn.btn-default.btn-xs(type="button",ng-click="download(item.name)") 下载
-												button.btn.btn-default(type="button",ng-click="rename(item.name)") 重命名
-												button.btn.btn-danger(type="button",ng-click="remove(item.name)") 删除
-	script(type="text/ng-template",id="rename.html")
-			.modal-header.bg-primary
-				.modal-title
-					h3 {{item.name}}
-					p.text-lt 类型： {{item.suffix}}
-			.modal-body
-				
-				form.form-validation.form-horizontal(name = "modalForm")
-					.form-group
-						label.col-sm-2.control-label 重命名
-						.col-sm-8
-							input.form-control(type="text",ng-model="rename",required="")
-			.modal-footer
-				button.btn.btn-default(ng-click="cancel()",type="button") 取消
-				button.btn.btn-default(ng-click="ok()",type="button",ng-disabled="modalForm.$invalid") 确认

@@ -96,7 +96,7 @@ class Container(models.Model):
 			},
 			"command":[],
 			"ports":{},
-			"volumes":{},
+			"volumes":self.getVolumes(),
 			"links":{},
 			"envs":{},
 			"restart":self.restart,
@@ -117,17 +117,7 @@ class Container(models.Model):
 				else:
 					tmp[port]={"key":port,"value":False}
 			params['ports']=tmp
-		if len(self.volumes)>0:
-			tmp={}
-			volumes=self.volumes.split(",")
-			path = self.getBaseDir()
-			for volume in volumes:
-				if ":" in volume:
-					v =volume.split(":")
-					if v[0].startswith(path):
-						v[0]=v[0][len(path)+1:]
-					tmp[v[1]]={"value":v[0],"key":v[1]}
-			params['volumes']=tmp
+		
 		if len(self.links)>0:
 			tmp={}
 			links=self.links.split(",")
@@ -152,6 +142,32 @@ class Container(models.Model):
 		path = files.getUploadDir(str(self.user))
 		path = os.path.join(path,'containers',self.name)
 		return path
+
+	def getVolumes(self):
+		tmp={}
+		if len(self.volumes)>0:			
+			volumes=self.volumes.split(",")
+			path = self.getBaseDir()
+			for volume in volumes:
+				manage=False
+				if ":" in volume:
+					v =volume.split(":")
+					if v[0].startswith(path):
+						v[0]=v[0][len(path)+1:]
+						manage=True
+					tmp[v[1]]={"value":v[0],"key":v[1],"manage":manage}
+		return tmp
+	def volumeToManage(self):
+		volumes = self.volumes
+		path = self.getBaseDir()
+		tmp=[]
+		if len(volumes):
+			volumes = volumes.split(",")
+			for volume in volumes:
+				v=volume.split(":")[0]
+				if v.startswith(path):
+					tmp.append(v)
+		return tmp
 
 	def getDetailStatus(self):
 		result={}

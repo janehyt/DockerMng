@@ -123,6 +123,8 @@ div(ng-controller="ApplicationDetailCtrl")
 												tr(ng-repeat="v in data.config.volumes")
 													td {{v.value}}
 													td {{v.key}}
+													td(ng-show="v.manage")
+														button.btn.btn-default.btn-sm(ng-click="openTab(v.value)") 管理
 										p.text-center.text-danger(ng-if="empty(data.config.volumes)")
 											strong 未自定义Volume挂载
 					tab(ng-if="data.inspect",select="setStat(false)")
@@ -210,6 +212,8 @@ div(ng-controller="ApplicationDetailCtrl")
 												tr(ng-repeat="v in inspect.volumes")
 													td {{v.value}}
 													td {{v.key}}
+													td(ng-show="v.manage")
+														button.btn.btn-default.btn-sm(ng-click="openTab(v.value)") 管理
 										p.text-center.text-danger(ng-if="empty(inspect.volumes)")
 											strong 没有Volume挂载
 							.form-group
@@ -232,8 +236,7 @@ div(ng-controller="ApplicationDetailCtrl")
 											td  {{(status.cpu.total*100.0/status.cpu.system).toFixed(2)}}%
 											td {{status.memory.usage|size}}/{{status.memory.limit|size}}
 											td {{status.network.read|size}}/{{status.network.write|size}}
-											td {{status.block.Read|size}}/
-											{{status.block.Write|size}}
+											td {{status.block.Read|size}}/{{status.block.Write|size}}
 
 							.row
 								.col-sm-6
@@ -246,7 +249,40 @@ div(ng-controller="ApplicationDetailCtrl")
 										.panel-heading.font-bold CPU模式
 										.panel-body
 											div(id="cpuPie",style="height:240px")
-
+					
+					tab(ng-repeat="tab in volumeTabs",active="tab.active")
+						tab-heading.m-b-md
+							span Volume管理  {{tab.name}}
+							a.text-muted(ng-click="closeTab(tab.name)")
+								i.glyphicon.glyphicon-remove
+						ul.breadcrumb.bg-white.b-a
+							li(ng-repeat="b in tab.bread")
+								a(ng-click="loadVolume(b.name,b.path)",ng-class="$index==tab.bread.length?'active':''")
+									i.fa.fa-home(ng-if="$index==0")
+									| {{b.name}}
+						form.form-horizontal.form-validation(ng-if="tab.data.content",name="fileForm")
+							.form-group
+								label.col-sm-2.control-label 文件内容
+								textarea.col-sm-8(ng-model="tab.data.content",rows="10",ng-disabled="!tab.edit",name="content")
+							.form-group
+								.col-sm-10
+									.pull-right
+										button.btn.btn-default(ng-click="tab.edit=true",ng-disabled="tab.edit") 修改
+										button.btn.btn-default(ng-click="tab.edit=false",ng-disabled="!tab.edit") 取消
+										button.btn.btn-primary(ng-click="saveFile(tab.name,tab.path)",ng-disabled="!tab.edit||fileForm.content.$pristine") 保存
+						.table-responsive(ng-if="!tab.data.content")
 							
-
+							table.table
+								thead
+									th 名字
+									th 类型
+									th 操作
+								tbody
+									tr(ng-repeat="item in tab.data")
+										td {{item.name}}
+										td {{item.isdir?'文件夹':'文件'}}
+										td
+											button.btn.btn-default(type="button",ng-click="loadVolume(tab.name,tab.path+'/'+item.name)") 打开
+											button.btn.btn-warning(type="button",ng-click="rename(tab.name,tab.path,item.name)") 重命名
+											button.btn.btn-danger(type="button",ng-click="remove(tab.name,tab.path,item.name)") 删除
 

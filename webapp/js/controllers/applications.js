@@ -398,6 +398,109 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 			}
 		}
 
+		$scope.openTab=function(data){
+			$scope.loadVolume(data,data);
+		}
+		$scope.closeTab=function(data){
+			if ($scope.volumeTabs[data]){
+				delete $scope.volumeTabs[data];
+			}
+		}
+		$scope.loadVolume=function(root_path,full_path){
+			console.info("load");
+			if(full_path.indexOf(root_path)==0){
+				$scope.volumeTabs[root_path]={name:root_path,active:true}
+
+				$scope.volumeTabs[root_path].bread=$scope.cacluPath(root_path,full_path);
+				$http.get("api/files/container/?id="+$state.params.id+"&path="+full_path).then(
+				function(response){
+					// console.info(response.data);
+					$scope.volumeTabs[root_path].data=response.data;
+					$scope.volumeTabs[root_path].edit=false
+					$scope.volumeTabs[root_path].path=full_path;
+				},function (x) {
+					console.info(x);
+				});
+			}
+			
+		}
+		$scope.cacluPath=function(root_path,full_path){
+			var roots=root_path.split("/")
+			var fulls=full_path.split("/")
+			var z = fulls.length-roots.length
+			var bread = new Array(z+1);
+			bread[0]={name:root_path,path:root_path};
+			for(var i =0;i<z;i++){
+				bread[i+1]={name:fulls[i+roots.length],
+					path:bread[i].path+'/'+fulls[i+roots.length]
+				}
+			}
+			return bread;
+		}
+		$scope.saveFile = function(root_path,full_path){
+			console.info(root_path,$scope.volumeTabs[root_path].data.content);
+			$http.post("api/files/volume_save/",{id:$state.params.id,path:full_path,content:$scope.volumeTabs[root_path].data.content})
+			.then(function(response){
+				// console.info(response.data);
+				toaster.pop("success","save","文件更新成功");
+				$scope.loadVolume(root_path,full_path);
+			},function(x){
+				console.info(x);
+			});
+		}
+		$scope.remove = function(root_path,full_path,name){
+			name = full_path+"/"+name;
+			var modalIns = $modal.open({
+	        templateUrl: 'app/views/template/delete.html',
+	        controller: 'ModalDelCtrl',
+	        resolve:{
+	          name:function(){
+	            return name;
+	          }
+	        }
+	      });
+	      modalIns.result.then(function(){
+	        // var params = {filename:name,newname:data}
+	        $http.get("api/files/volume_remove/?path="+name+"&id="+$state.params.id).then(
+	          function(response){
+	            console.info(response);
+	            $scope.loadVolume(root_path,full_path);
+	          },function(x){
+	            console.info(x);
+	          }
+	        )
+	      },function(){
+	        console.info("dismiss");
+	      })
+		}
+
+		$scope.rename = function(root_path,full_path,name){
+	      var modalIns = $modal.open({
+	        templateUrl: 'app/views/template/rename.html',
+	        controller: 'ModalInsCtrl',
+	        resolve:{
+	          name:function(){
+	            return name;
+	          }
+	        }
+	      });
+	      modalIns.result.then(function(data){
+	        // var params = {filename:name,newname:data}
+	        name = full_path+"/"+name;
+	        data = full_path+"/"+data;
+	        $http.get("api/files/volume_rename/?path="+name+"&id="+$state.params.id+"&newname="+data).then(
+	          function(response){
+	            console.info(response);
+	            $scope.loadVolume(root_path,full_path);
+	          }
+	        ),function(x){
+	          console.info(x);
+	        }
+	      },function(){
+	        console.info("dismiss");
+	      })
+	    }
+
 		$scope.drawCharts=function(data){
 			var memory=[{label:"free",data:data.memory.limit-data.memory.usage},{label:"usage",data:data.memory.usage}]
 			var cpu=[{},{},
@@ -594,12 +697,15 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 				for(var v in volumes){
 					var de = volumes[v].Destination;
 					var sr = volumes[v].Source;
+					var manage=false
 					if(data.config.volumes[de]){
-						sr = data.config.volumes[de].value
+						sr = data.config.volumes[de].value;
+						if(sr.indexOf("/")!=0)
+							manage=true;
 					}else{
 						sr = "docker volume挂载"
 					}
-					$scope.inspect.volumes[de]={key:de,value:sr}
+					$scope.inspect.volumes[de]={key:de,value:sr,manage:manage}
 
 				}
 
@@ -615,6 +721,7 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 		$scope.inspect={};
 		$scope.status={}
 		$scope.progressData=0;
+		$scope.volumeTabs={}
 		$scope.pieOption={
                 series: { pie: { show: true, innerRadius: 0.5, stroke: { width: 0 }, label: { show: true, threshold: 0.05 } } },
                 colors: [$scope.app.color.success,$scope.app.color.warning,$scope.app.color.info,$scope.app.color.danger],
@@ -661,7 +768,6 @@ app.controller('ApplicationDetailCtrl',['$scope','$http','$state','$timeout','$m
 		uiLoad.load(JQ_CONFIG["plot"]).then(function(){
 			$scope.loadData();
 		});
-	
 	
 
 }]);

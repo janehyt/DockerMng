@@ -83,7 +83,7 @@ DATABASES = {
         'NAME': 'mysite_db',
         'USER': 'root',
         'PASSWORD': 'root',
-        'HOST': '192.168.31.100',
+        'HOST': 'mysql',
         'PORT': '3306',
         'OPTIONS': {
             'autocommit': True,

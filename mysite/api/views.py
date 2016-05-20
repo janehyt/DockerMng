@@ -46,10 +46,15 @@ class UserViewSet(viewsets.ModelViewSet):
         data = request.data
 
         serializer = UserSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return self.sign_in(self,request)
+        if serializer.is_valid():
+            serializer.save()
+            return self.sign_in(request)
+        errors = ""
+        if "username" in serializer.errors:
+            errors = "用户名已存在,"
+        if "email" in serializer.errors:
+            errors+="邮箱已被注册,"
+        return Response(errors[0:len(errors)-1],status=400)
 
     @list_route(methods=['POST'])
     def reset(self, request):
@@ -67,12 +72,12 @@ class UserViewSet(viewsets.ModelViewSet):
         
 
         return Response("原密码错误",status=400)
-    @list_route()
+    @list_route(methods=['POST'])
     def log_out(self, request):
         m=auth.logout(request)
         return Response(m)
 
     @list_route()
-    def get_user(self, request):
+    def load_user(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)

@@ -4,49 +4,40 @@
  * Config for the router
  */
 angular.module('app')
-  .run(
-    [          '$rootScope', '$state', '$stateParams','$http',
-      function ($rootScope,   $state,   $stateParams, $http) {
+  .run(['$rootScope', '$state', '$stateParams','$http','User','$window',
+      function ($rootScope,   $state,   $stateParams, $http,User,$window) {
           $rootScope.$state = $state;
           $rootScope.$stateParams = $stateParams;
           $rootScope.user = {};
           $rootScope.getUser = function(){
             // console.info("rootscope");
-            $http.get("api/users/get_user")
-            .then(function(response){
-              if($state.current.name.indexOf('app.')==0){}
-                
+            User.loadUser()
+            .then(function(){
+              if($state.current.name.indexOf('app.')==0){}                
               else{
                 $state.go("app.dashboard");
               }
-              $rootScope.user=response.data;
-            },function(x){
-              console.info(x);
+              $rootScope.user=User.getUser();
+              console.info($rootScope.user);
+            },function(){
               if($state.current.name.indexOf('page.')==0){}
-
               else{
                 $state.go("page.signin");
               }
-              // TODO 不同错误码解决方法
             })
           }
 
           $rootScope.$on("$stateChangeSuccess", function(event, next, current) {
-              // console.info("state change");
-              // console.info($state.current);
               $rootScope.getUser();
           });
 
           // $rootScope.getUser();
 
           $rootScope.logout = function(){
-            console.log("root logout");
-            $http.get("api/users/log_out")
-            .then(function(response){
-              $rootScope.user = {}
-              $state.go("page.signin");
-            },function(x){
-              location.reload()
+            User.logout().then(function(){
+              $window.location.reload();
+            },function(){
+              console.info(User.getError());
             })
           }
 

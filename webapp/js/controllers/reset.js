@@ -1,23 +1,19 @@
-app.controller('ResetCtrl',['$scope','$http','$timeout','$state',
-	function($scope,$http,$timeout,$state){
+app.controller('ResetCtrl',['$scope','$http','$timeout','$state','User',
+	function($scope,$http,$timeout,$state,User){
 
 		$scope.reset=function(){
 			$scope.error="";
-			$http.post("api/users/reset/",$scope.data).then(
-				function(response){
-					// alert('已成功修改密码,请使用新密码重新登陆！');
+			User.resetPassword($scope.data).then(
+				function(){
 					$scope.success="已成功修改密码,稍后请使用新密码重新登陆！";
 					$timeout(
 						function(){
-							console.info("ok");
 							$state.go('page.signin');
 						},3000
 					);
-				},function(x){
-					console.info(x);
-					$scope.error=x.data;
-				}
-			)
+				},function(){
+					$scope.error=User.getError();
+				})
 		}
 		$scope.close=function(){
 			$scope.success="";

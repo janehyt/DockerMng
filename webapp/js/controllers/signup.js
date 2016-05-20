@@ -17,7 +17,7 @@ app.controller("SignupCtrl",['$scope',"$http","$state","$rootScope",
 					$state.go("app.dashboard");
 			},function(x){
 				var detail = x.data.detail
-				if(x.data.detail.indexOf("CSRF")!=-1){
+				if(x.data.detail&&x.data.detail.indexOf("CSRF")!=-1){
 					$scope.authError = "您可能已经登陆，请刷新页面"
 				}else{
 					console.info(x);

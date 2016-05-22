@@ -76,4 +76,15 @@ angular.module('app')
  			return '';
  		return namespace+"/";
  	}
+ }).filter("stateClass",function(){
+ 	return function(status){
+ 		if(status=="existed"||status=="running")
+			return "label-success"
+		else if(status=="exited")
+			return "label-danger"
+		else if(status=="paused"||status=="pulling image")
+			return "label-warning"
+		else
+			return "label-default"
+ 	}
  })

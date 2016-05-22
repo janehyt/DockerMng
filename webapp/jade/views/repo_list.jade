@@ -23,6 +23,8 @@ div(ng-controller="RepoListCtrl")
 										tr
 											th.col-xs-3 名称
 											th.col-xs-2 标签
+											th.col-xs-2 状态
+											th.col-xs-2 来源
 											//- th.col-xs-4 描述
 											th.col-xs-3 操作
 									tbody.wrapper
@@ -31,9 +33,12 @@ div(ng-controller="RepoListCtrl")
 												| {{item.repository}}
 											td {{item.tag}}
 											//- td {{item.description}}
+											td 
+												span.label(ng-class="item.detail|stateClass") {{item.detail}}
+											td {{item.isbuild?'构建':'拉取'}}
 											td
 												.btn-group.dropdown(dropdown="")
-													button.btn.btn-default(type="button",ng-click="publish(item)") 部署
+													button.btn.btn-default(type="button",ng-click="publish(item)",ng-if="item.status=='EX'") 部署
 								h3.text-primary.text-center(ng-if="!images.results||images.results.length==0") 暂无镜像显示
 				
 								.pull-right
@@ -67,17 +72,15 @@ div(ng-controller="RepoListCtrl")
 								table.table.table-striped.b-t.b-light
 									thead
 										tr
-											th.col-xs-3 名称
-											th.col-xs-2 更新
+											th.col-xs-4 名称
 											th.col-xs-2 收藏
 											th.col-xs-2 拉取
 											//- th.col-xs-4 描述
-											th.col-xs-3 操作
+											th.col-xs-4 操作
 									tbody.wrapper
 										tr(ng-repeat="item in repos.results")
 											td
 												| {{item.namespace|filterOfficial}} {{item.name}}
-											td {{item.last_updated|time}}
 											td {{item.star_count|largeNumber}}
 											td {{item.pull_count|largeNumber}}
 											//- td {{item.description}}

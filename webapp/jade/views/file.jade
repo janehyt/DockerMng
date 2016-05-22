@@ -9,30 +9,66 @@ div(ng-controller="FileCtrl")
 					p.text-lt 通过上传队列上传文件，在已有文件中可以重命名、删除、下载文件
 					p.text-lt 注：上传文件中的删除仅从队列中移除文件
 			.panel-body
+				ul.breadcrumb.bg-white.b-a
+					li(ng-repeat="b in files.bread")
+						a(ng-click="loadFiles(b.path)",ng-class="(files.bread.length==$index+1)?'active':''")
+							i(ng-if="$index==0").fa.fa-home
+							| {{b.name}}
 				tabset.tab-container
-					tab(select="loadFiles()")
-						tab-heading 已有文件
+					tab(select="loadFiles(path)")
+						tab-heading 文件列表
 						.wrapper
+							form.m-b-md(ng-submit="mkdir(name)",name="dirForm")
+								.input-group
+									.col-sm-4
+										.input-group
+											input.input-md.form-control(type="text",placeholder="文件夹名",ng-model="name")
+											span.input-group-btn
+												input.btn.btn-md.btn-default(type="submit",value="创建文件夹",ng-disabled="!name")
 							.table-responsive
+								
 								table.table.table-striped.b-t.b-light
 									thead
 										tr
 											th 名字
 											th 大小
+											th 类型
+											th.text-center 已被挂载
 											th 操作
 									tbody
-										tr(ng-repeat="item in files")
+										tr(ng-repeat="item in files.list")
 											td
 												strong {{item.name}}
 											td(nowrap="") {{item.size|size}}
+											td {{item.isfile?'文件':'文件夹'}}
+											td.text-center
+												span.text-success(ng-if="!item.editable")
+													i.glyphicon.glyphicon-ok
+												span.text-danger(ng-if="item.editable")
+													i.glyphicon.glyphicon-remove
 											td(nowrap="")
-												//- button.btn.btn-default.btn-xs(type="button",ng-click="download(item.name)") 下载
-												button.btn.btn-default(type="button",ng-click="rename(item.name)") 重命名
-												button.btn.btn-danger(type="button",ng-click="remove(item.name)") 删除
-					tab
+
+												.btn-group.dropdown(dropdown="")
+													button.btn.btn-default(type="button",ng-if="!item.isfile",ng-click="loadFiles(item.path)") 打开
+													button.btn.btn-default(type="button",ng-if="item.isfile",ng-click="download(item.path)") 下载
+													button.btn.btn-default(dropdown-toggle="")
+														span.caret
+													ul.dropdown-menu
+														li(ng-if="!item.isfile")
+															a(type="button",ng-click="loadFiles(item.path)") 打开
+														li(ng-if="item.isfile")
+															a(type="button",ng-click="download(item.path)") 下载
+														li(ng-if="item.name.indexOf('.zip')==item.name.length-4")
+															a(type="button",ng-click="unzip(item.path)") 解压
+														li(ng-if="item.editable")
+															a(type="button",ng-click="rename(item.name)") 重命名
+														li(ng-if="item.editable")
+															a(type="button",ng-click="remove(item.name)") 删除
+					tab(select="setUploader(path)")
 						tab-heading 上传队列
 						.wrapper
 							input(type="file",nv-file-select="",uploader="uploader")
+							br
 							.table-responsive
 								table.table.table-striped.b-t.b-light
 									thead
@@ -51,11 +87,11 @@ div(ng-controller="FileCtrl")
 												.progress.progress-sm.m-b-none.m-t-xs
 													.progress-bar.bg-info(role="progressbar",ng-style="{'width':item.progress+'%'}")
 											td.text-center
-												span.text-success(ng-show="item.isSuccess")
+												span.text-success(ng-if="item.isSuccess")
 													i.glyphicon.glyphicon-ok
-												span.text-warning(ng-show="item.isCancel")
+												span.text-warning(ng-if="item.isCancel")
 													i.glyphicon.glyphicon-ban-circle
-												span.text-danger(ng-show="item.isError")
+												span.text-danger(ng-if="item.isError")
 													i.glyphicon.glyphicon-remove
 													| {{item.error}}
 											td(nowrap="")

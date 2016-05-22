@@ -2,6 +2,7 @@
 
 var app =  
 angular.module('app')
+  .constant('BASE_URL',"")
   .config(
     [        '$controllerProvider', '$compileProvider', '$filterProvider', '$provide',
     function ($controllerProvider,   $compileProvider,   $filterProvider,   $provide) {

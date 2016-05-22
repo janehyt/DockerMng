@@ -19,6 +19,25 @@
 	"delete": "删除应用",
 	"pause": "暂停实例",
 	"unpause": "恢复实例",
-	"restart": "重新启动"
+	"restart": "重新启动",
+	"username":"用户名",
+	"password": "密码",
+	"confirm":"确认密码",
+	"email":"邮箱",
+	"signin":{
+		"welcome": "登录后获取服务",
+		"action": "登录",
+		"another": "还没有账号？",
+		"go": "创建账号"
+	},
+	"signup":{
+		"welcome": "现在注册获取服务",
+		"action": "注册",
+		"another": "已有账号？",
+		"go": "登录"
+	},
+	"error":{
+		"confirm":"密码不匹配"
+	}
 
 }

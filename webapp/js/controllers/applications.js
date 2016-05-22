@@ -1,6 +1,5 @@
 app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toaster','$timeout',
 	function($scope,$http,$state,$modal,toaster,$timeout){
-
 	
 	$scope.loadData=function(url){
 		if(!url||url==""){
@@ -127,7 +126,7 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 	$scope.title="应用管理";
 	$scope.containers=[];
 	$scope.page={page:1,page_size:10,count:1,query:""}
-	$scope.loadData();
+	// $scope.loadData();
 	
 
 }]);

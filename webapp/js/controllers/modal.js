@@ -7,6 +7,9 @@ app.controller('ModalInsCtrl',['$scope','$modalInstance','name',
         if(index!=-1){
           $scope.item.name=name.substring(0,index);
           $scope.item.suffix=name.substring(index);
+        }else{
+          $scope.item.name=name;
+          $scope.item.suffix=""
         }
       }
       

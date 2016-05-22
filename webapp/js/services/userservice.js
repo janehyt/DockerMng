@@ -1,4 +1,4 @@
-app .constant('BASE_URL',"")
+app
 	.service('User', ['$http','BASE_URL','$q',
 		function($http,base_url,$q){
 			var __user = {};

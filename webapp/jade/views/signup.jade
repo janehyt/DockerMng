@@ -2,22 +2,22 @@
 	a.navbar-brand.block.m-t {{app.name}}
 	.m-b-lg
 		.wrapper.text-center
-			strong Sign in to get in touch
+			strong(translate="signup.welcome") Sign in to get in touch
 		form.form-validation(name="SignupForm")
 			.text-danger.wrapper.text-center(ng-show="authError") {{authError}}
-			.text-danger.wrapper.text-center(ng-show="!SignupForm.confirm.$pristine&&SignupForm.confirm.$error.validator") Password do not match!	
+			.text-danger.wrapper.text-center(ng-show="!SignupForm.confirm.$pristine&&SignupForm.confirm.$error.validator",translate="error.confirm") Password do not match!	
 			.list-group.list-group-sm
 				.list-group-item
-					input.form-control.no-border(type="text",placeholder="Username",ng-model="user.username",required="")
+					input.form-control.no-border(type="text",placeholder="{{'username'|translate}}",ng-model="user.username",required="")
 				.list-group-item
-					input.form-control.no-border(type="email",placeholder="Email",ng-model="user.email",required="")
+					input.form-control.no-border(type="email",placeholder="{{'email'|translate}}",ng-model="user.email",required="")
 				.list-group-item
-					input.form-control.no-border(type="password",placeholder="Password",ng-model="user.password",required="",name="password")
+					input.form-control.no-border(type="password",placeholder="{{'password'|translate}}",ng-model="user.password",required="",name="password")
 				.list-group-item
-					input.form-control.no-border(type="password",placeholder="Confirm",ng-model="confirm",required="",ui-validate="'$value==user.password'",ui-validate-watch="'user.password'",name="confirm")
-			button.btn.btn-lg.btn-primary.btn-block(ng-click="signup()",ng-disabled="SignupForm.$invalid") Sing up
+					input.form-control.no-border(type="password",placeholder="{{'confirm'|translate}}",ng-model="confirm",required="",ui-validate="'$value==user.password'",ui-validate-watch="'user.password'",name="confirm")
+			button.btn.btn-lg.btn-primary.btn-block(ng-click="signup()",ng-disabled="SignupForm.$invalid") {{'signup.action'|translate}}
 			.line.line-dashed
 			p.text-center
-				small Already have an account?
-			a.btn.btn-default.btn-lg.btn-block(ui-sref="page.signin") Sign in
+				small(translate="signup.another") Already have an account?
+			a.btn.btn-default.btn-lg.btn-block(ui-sref="page.signin") {{'signup.go'|translate}}
 	.text-center(ng-include="'app/views/partials/page_footer.html'")

@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import permission_classes,detail_route,list_route
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from .serializers import UserSerializer
+from .files import VolumeService
+from django.http import StreamingHttpResponse
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -81,3 +83,76 @@ class UserViewSet(viewsets.ModelViewSet):
     def load_user(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
+
+class VolumeViewSet(viewsets.ViewSet):
+    def list(self,request):
+        path = request.query_params.get("path","")
+        files = VolumeService(request.user,path)
+        data = files.list()
+        if data is None:
+            return Response({"detail":"找不到指定路径"},status = 404)
+        return Response(data);
+    @list_route()
+    def download(self,request):
+        path = request.query_params.get("path","")
+        files = VolumeService(request.user,path)
+        data = files.download()
+        if data is None:
+            return Response({"detail":"找不到指定路径"},status = 404)
+        response = StreamingHttpResponse(data.get("stream"))
+        response['Content-Type'] = 'application/octet-stream'
+        response['Content-Disposition'] = 'attachment;filename="{0}"'.format(data.get("name"))
+        return response
+
+    # 上传文件
+    def create(self, request,format=None):
+        file_obj = request.data['file']
+        path = request.query_params.get("path","")
+        files = VolumeService(request.user,path)
+        status = files.fileUpload(str(file_obj),file_obj)
+        return Response(status=status)
+
+    @list_route(methods=['POST'])
+    def rename(self,request):
+        path = request.data.get("path","")
+        name = request.data.get("name","")
+        if path and name:    
+            files = VolumeService(request.user,path)
+            return Response(files.rename(name))
+        return Response({"detail":"请提供path和name"},status=406)
+
+    @list_route(methods=['POST'])
+    def remove(self,request):
+        path = request.data.get("path","")
+        # name = request.data.get("name","")
+        if path: 
+            files = VolumeService(request.user,path)
+            return Response(files.remove())
+        return Response({"detail":"请提供path"},status=406)
+
+    @list_route(methods=['POST'])
+    def mkdir(self,request):
+        path = request.data.get("path","")
+        name = request.data.get("name","")
+        if name:    
+            files = VolumeService(request.user,path)
+            return Response(status=files.mkdir(name))
+        return Response({"detail":"请提供path和name"},status=406)
+
+    @list_route(methods=['POST'])
+    def unzip(self,request):
+        path = request.data.get("path","")       
+        if path:    
+            files = VolumeService(request.user,path)
+            return Response(status=files.unzip())
+        return Response({"detail":"请提供path"},status=406)
+
+    # @list_route()
+    # def remove(self,request):
+    #     path = files.getUploadDir(str(request.user))
+    #     filename = request.query_params.get("filename","")
+    #     if len(filename):
+    #         filename=os.path.join(path,filename)
+    #         return Response(status=files.destroyFile(filename))
+    #     return Response({"detail":"filename required"},status=406)

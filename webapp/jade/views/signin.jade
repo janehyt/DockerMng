@@ -2,17 +2,17 @@
 	a.navbar-brand.block.m-t {{app.name}}
 	.m-b-lg
 		.wrapper.text-center
-			strong Sign in to get in touch
+			strong(translate="signin.welcome") Sign in to get in touch
 		form.form-validation(name="SigninForm")
 			.text-danger.wrapper.text-center(ng-show="authError") {{authError}}
 			.list-group.list-group-sm
 				.list-group-item
-					input.form-control.no-border(type="text",placeholder="Username",ng-model="user.username",required="true")
+					input.form-control.no-border(type="text",placeholder="{{'username'|translate}}",ng-model="user.username",required="true")
 				.list-group-item
-					input.form-control.no-border(type="password",placeholder="Password",ng-model="user.password",required="")
-			button.btn.btn-lg.btn-primary.btn-block(ng-click="signin()",ng-disabled="SigninForm.$invalid") Sing in
+					input.form-control.no-border(type="password",placeholder="{{'password'|translate}}",ng-model="user.password",required="")
+			button.btn.btn-lg.btn-primary.btn-block(ng-click="signin()",ng-disabled="SigninForm.$invalid") {{'signin.action'|translate}}
 			.line.line-dashed
 			p.text-center
-				small Do not have an account?
-			a.btn.btn-default.btn-lg.btn-block(ui-sref="page.signup") Create an account
+				small(translate="signin.another") Do not have an account?
+			a.btn.btn-default.btn-lg.btn-block(ui-sref="page.signup") {{'signin.go'|translate}}
 	.text-center(ng-include="'app/views/partials/page_footer.html'")

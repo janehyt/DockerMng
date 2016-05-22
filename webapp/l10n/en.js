@@ -19,6 +19,20 @@
 	"delete": "Destroy",
 	"pause": "Pause",
 	"unpause": "Unpause",
-	"restart": "Restart"
+	"restart": "Restart",
+	"username":"Username",
+	"password": "Password",
+	"signin":{
+		"welcome": "Sign in to get in touch",
+		"action": "Sign in",
+		"another": "Do not have an account?",
+		"go": "Create an account"
+	},
+	"signup":{
+		"welcome": "Sign up to get in touch",
+		"action": "Sign up",
+		"another": "Already have an account?",
+		"go": "Sign in"
+	}
 
 }

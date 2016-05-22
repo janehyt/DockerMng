@@ -1,8 +1,6 @@
 app.controller('DashboardCtrl',['$scope','$http','uiLoad','JQ_CONFIG',
 	function($scope,$http,uiLoad,JQ_CONFIG){
 
-
-
 		$scope.loadData=function(){
 			$http.get("api/users/overview/").then(
 				function(response){
@@ -88,7 +86,7 @@ app.controller('DashboardCtrl',['$scope','$http','uiLoad','JQ_CONFIG',
 		]
 
 		uiLoad.load(JQ_CONFIG["plot"]).then(function(){
-			$scope.loadData();
+			// $scope.loadData();
 		});
 		
 }]);

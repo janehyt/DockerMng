@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 # from rest_framework.authtoken.models import Token
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from .models import Image
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -15,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
 	)
     email = serializers.CharField(validators=[UniqueValidator(queryset=User.objects.all())])
     id = serializers.IntegerField(read_only=True)
-    url = serializers.IntegerField(read_only=True)
+    # url = serializers.CharField(read_only=True)
     def create(self,validated_data):
         user = User(**validated_data)
         user.set_password(validated_data.get('password'))
@@ -29,3 +30,9 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(validated_data['password'])
         instance.save()
         return instance
+
+class ImageSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Image
+        fields = ('url','id','repository','status','detail','tag','isbuild')
+    detail = serializers.CharField(read_only=True,source="get_status_display")

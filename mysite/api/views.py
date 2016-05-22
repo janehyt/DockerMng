@@ -11,10 +11,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes,detail_route,list_route
 from rest_framework.permissions import AllowAny,IsAuthenticated
-from .serializers import UserSerializer
-from .files import VolumeService
 from django.http import StreamingHttpResponse
-
+from .serializers import UserSerializer,ImageSerializer
+from .files import VolumeService
+from .dockerconn import DockerHub
+from .models import Image
+import markdown
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
@@ -85,6 +87,87 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+class ImageViewSet(viewsets.ModelViewSet):
+
+    queryset = Image.objects.all()
+    serializer_class = ImageSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def list(self, request):
+        pagination = self.pagination_class()
+        query = request.query_params.get("query","")
+        queryset = Image.objects.filter(users=request.user,repository__contains=query)
+
+        data = pagination.paginate_queryset(queryset,request)
+
+        serializer = ImageSerializer(data,many=True,context={'request': request})
+        images = serializer.data
+        
+        return pagination.get_paginated_response(images)
+
+class RepoViewSet(viewsets.ViewSet):
+    def list(self,request):
+        base_url = "http://"+request.get_host()+request.path
+        cli  = DockerHub()
+        query = request.query_params.get("query")
+        if query:
+            data=cli.searchRepo(request.query_params)
+            
+        else:
+            namespace = request.query_params.get("namespace")
+            data = cli.getRepoList(namespace,request.query_params)
+
+
+        r_previous = data.get('previous')
+        r_next = data.get('next')
+        if r_previous:
+            pages=r_previous.split("?")
+            data['previous'] = base_url+"?"+pages[1]
+        if r_next:
+            pages = r_next.split("?")
+            data['next'] = base_url+"?"+pages[1]
+
+        return Response(OrderedDict([
+            ("count",data.get('count')),
+            ("next",data.get('next')),
+            ("previous",data.get('previous')),
+            ("results",data.get('results'))]))
+
+    def retrieve(self,request,pk=None):
+        cli  = DockerHub()
+        namespace = request.query_params.get("namespace")
+        data=cli.getRepoDetail(pk,namespace)
+        mk = data.get("full_description")
+        if mk:
+            data['full_description'] = markdown.markdown(mk,extensions=['markdown.extensions.tables','markdown.extensions.fenced_code'])
+        else:
+            return Response(data,status=404)
+        return Response(data)
+
+    @detail_route()
+    def tags(self,request,pk=None):
+        base_url = "http://"+request.get_host()+request.path
+        cli = DockerHub()
+        namespace = request.query_params.get("namespace")
+        tag_name = request.query_params.get("name")
+        # params={}
+        # params['page']=request.query_params.get("page",1)
+        # params['page_size'] = request.query_params.get('page_size')
+        data=cli.getRepoTags(pk,namespace,tag_name,request.query_params)
+        r_previous = data.get('previous')
+        r_next = data.get('next')
+        if r_previous:
+            pages=r_previous.split("?")
+            data['previous'] = base_url+"?"+pages[1]
+        if r_next:
+            pages = r_next.split("?")
+            data['next'] = base_url+"?"+pages[1]
+        return Response(OrderedDict([
+            ("count",data.get('count')),
+            ("next",data.get('next')),
+            ("previous",data.get('previous')),
+            ("results",data.get('results'))]))
+
 class VolumeViewSet(viewsets.ViewSet):
     def list(self,request):
         path = request.query_params.get("path","")
@@ -147,12 +230,3 @@ class VolumeViewSet(viewsets.ViewSet):
             files = VolumeService(request.user,path)
             return Response(status=files.unzip())
         return Response({"detail":"请提供path"},status=406)
-
-    # @list_route()
-    # def remove(self,request):
-    #     path = files.getUploadDir(str(request.user))
-    #     filename = request.query_params.get("filename","")
-    #     if len(filename):
-    #         filename=os.path.join(path,filename)
-    #         return Response(status=files.destroyFile(filename))
-    #     return Response({"detail":"filename required"},status=406)

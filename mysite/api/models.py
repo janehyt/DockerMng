@@ -18,6 +18,8 @@ class Repository(models.Model):
 	namespace = models.CharField(max_length=150,default="locale")
 	user = models.ForeignKey(User,on_delete=models.CASCADE,verbose_name="owner",related_name="repositories")
 	description=models.TextField(default="",blank=True)
+	created = models.DateTimeField(auto_now_add=True)
+	updated = models.DateTimeField(auto_now=True)
 
 	class Meta:
 		unique_together=(('name','namespace'),)
@@ -26,7 +28,7 @@ class Repository(models.Model):
 		return self.namespace+"/"+self.name
 	def get_absolute_url(self):
 		return "/"+self.id
-# 仅官方镜像
+
 class Image(models.Model):
 	PULLING = "PU"
 	BUILDING = "BD"
@@ -50,7 +52,10 @@ class Image(models.Model):
 		return self.repository+":"+self.tag
 
 	def get_absolute_url(self):
-		return "/"+self.id
+		if self.id:
+			return "/"+self.id
+		else:
+			return ""
 
 #拉取进度或构建进度
 class Process(models.Model):

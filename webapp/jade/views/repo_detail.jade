@@ -15,7 +15,7 @@ div(ng-controller="RepoDetailCtrl")
 					.col-sm-4.text-lt 拉取数: 
 						span.label.label-info {{data.pull_count|largeNumber}}
 				span.wrapper
-					button.btn.btn-primary.btn-sm(ng-click="publish('latest')") 部署latest版本
+					button.btn.btn-primary.btn-sm(ng-click="pull('latest')") 拉取latest版本
 				
 			.panel-body
 				tabset.tab-container
@@ -37,7 +37,7 @@ div(ng-controller="RepoDetailCtrl")
 									span.col-xs-3 {{tag.last_updated|time}}
 									span.col-xs-3 {{tag.full_size|size}}
 									.pull-right
-										button.btn.btn-default(ng-click="publish(tag.name)") 部署	
+										button.btn.btn-default(ng-click="pull(tag.name)") 拉取	
 							.table-responsive
 								.pull-right
 								
@@ -45,7 +45,7 @@ div(ng-controller="RepoDetailCtrl")
 										span 共
 											strong {{page.count}}
 											| 个应用,每页显示
-										select.form-control(ng-model="page.page_size",ng-change="loadTags()")
+										select.form-control(ng-model="tags.page.page_size",ng-change="loadTags(1)")
 											option(value="5") 5
 											option(value="10") 10
 											option(value="15") 15
@@ -54,11 +54,11 @@ div(ng-controller="RepoDetailCtrl")
 										.input-group
 
 											span.input-group-btn
-												button.btn.btn-default(ng-disabled="!tags.previous",ng-click="loadTags(tags.previous)") 上一页
-											select.form-control(ng-model="page.page",ng-change="loadTags()")
-												option(ng-repeat="i in getPageArray() track by $index") {{$index+1}}
+												button.btn.btn-default(ng-disabled="!tags.previous",ng-click="loadTags(tags.page.page-1)") 上一页
+											select.form-control(ng-model="tags.page.page",ng-change="loadTags()")
+												option(ng-repeat="i in tags.array track by $index") {{$index+1}}
 											span.input-group-btn
-												button.btn.btn-default(ng-disabled="!tags.next",ng-click="loadTags(tags.next)") 下一页
+												button.btn.btn-default(ng-disabled="!tags.next",ng-click="loadTags(tags.page.page+1)") 下一页
 							//- .pull-right
 								a.btn.btn-default.btn-sm(ng-disabled="!tags.previous",ng-click="loadTags(tags.previous)") 上一页
 								a.btn.btn-default.btn-sm(ng-disabled="!tags.next",ng-click="loadTags(tags.next)") 下一页

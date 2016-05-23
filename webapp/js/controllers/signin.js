@@ -4,7 +4,7 @@ app.controller("SigninCtrl",['$scope',"User","$window",
 		$scope.user = {};
 		$scope.authError = null;
 		$scope.signin = function(){
-			User.login($scope.user).then(
+			User.signin($scope.user).then(
 				function(){
 					$window.location.reload();
 				},

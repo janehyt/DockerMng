@@ -29,7 +29,12 @@ app.service('Repo',['$http','BASE_URL','$q',
 				return _page;
 			}
 			this.setPage=function(page){
-				_page=page;
+				if(page.page)
+					_page.page=page.page;
+				if(page.page_size)
+					_page.page_size=page.page_size;
+				if(page.query)
+					_page.query=page.query;
 			}
 
 

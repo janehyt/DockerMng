@@ -3,9 +3,24 @@ app
 		function($http,base_url,$q){
 			var __user = {};
 			var __error="";
-			this.login=function(data){
+			this.signin=function(data){
 				var deferred = $q.defer();
 				$http.post(base_url+'api/users/sign_in/',data).then(
+					function(){
+						deferred.resolve();
+					},function(x){
+						if(x.data.detail&&x.data.detail.indexOf("CSRF")!=-1){
+							__error = "您可能已经登陆，请刷新页面";
+						}else{							
+							__error=x.data;
+						}
+						deferred.reject(x);
+					});
+				return deferred.promise;
+			}
+			this.signup=function(data){
+				var deferred = $q.defer();
+				$http.post(base_url+'api/users/sign_up/',data).then(
 					function(){
 						deferred.resolve();
 					},function(x){

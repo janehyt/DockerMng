@@ -99,7 +99,7 @@ angular.module('app')
                   }
               })
               .state('app.repos', {
-                  url: '/repos?page&page_size',
+                  url: '/repos?page&page_size&tab',
                   templateUrl: 'app/views/repo_list.html',
               })
               .state('app.repo',{

@@ -9,7 +9,7 @@ div(ng-controller="RepoListCtrl")
 					p.text-lt DockerHub镜像默认显示官方镜像，搜索可查看更多镜像
 			.panel-body
 				tabset.tab-container
-					tab(select="loadImages()")
+					tab(select="loadImages()",active="tabs[0]")
 						tab-heading 已有镜像
 						.wrapper
 							form.m-b-md(ng-submit="loadImages(1)",name="searchImageForm")
@@ -60,8 +60,11 @@ div(ng-controller="RepoListCtrl")
 												option(ng-repeat="i in images.array track by $index") {{$index+1}}
 											span.input-group-btn
 												button.btn.btn-default(ng-disabled="!images.next",ng-click="loadImages(images.page.page+1)") 下一页
-					tab(select="loadData()")
-						tab-heading DockerHub镜像
+					tab(active="tabs[1]")
+						tab-heading 我的仓库
+						.wrapper
+					tab(select="loadData()",active="tabs[2]")
+						tab-heading DockerHub仓库
 						.wrapper
 							form.m-b-md(ng-submit="loadData(1)",name="searchForm")
 								.input-group.col-sm-4

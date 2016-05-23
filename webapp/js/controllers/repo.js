@@ -1,6 +1,7 @@
-app.controller('RepoListCtrl',['$scope','$http','$state','Repo','Hubrepo',
-	function($scope,$http,$state,Repo,Hubrepo){
-	$scope.fileService = File;
+app.controller('RepoListCtrl',['$scope','$state','Repo','Hubrepo',
+	function($scope,$state,Repo,Hubrepo){
+	
+
 	$scope.loadImages=function(page){
 		if($scope.images.page&&page)
 			$scope.images.page.page=page;
@@ -46,16 +47,25 @@ app.controller('RepoListCtrl',['$scope','$http','$state','Repo','Hubrepo',
 	$scope.pull=function(item){
 		console.info(item);
 	}
+	$scope.init = function(){
+		$scope.title="镜像仓库";
+		$scope.repos={};
+		$scope.images={};
+		$scope.tabs=[true,false,false];
+		if($state.params.tab){
+			$scope.tabs[$state.params.tab]=true;
+		}
+		$scope.fileService = File;
+	}
+	$scope.init();
 	// $scope.loadData();
-	$scope.title="镜像仓库";
-	$scope.repos={page:Hubrepo.getPage()};
-	$scope.images={page:Repo.getPage()};
+	
 	// $scope.query="";
 	
 
 }]);
-app.controller('RepoDetailCtrl',['$scope','$http','$state','$sce','filterOfficialFilter','Hubrepo',
-	function($scope,$http,$state,$sce,filterOfficial,Hubrepo){
+app.controller('RepoDetailCtrl',['$scope','$state','$sce','filterOfficialFilter','Hubrepo',
+	function($scope,$state,$sce,filterOfficial,Hubrepo){
 
 
 	$scope.loadData=function(){	

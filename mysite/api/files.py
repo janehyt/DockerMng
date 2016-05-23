@@ -37,7 +37,7 @@ class VolumeService(object):
 		if not os.path.isdir(path):
 			os.makedirs(path)
 			return 204
-		return 404
+		return 403
 
 	def fileUpload(self,filename,file):
 		# upload_dir = getUploadDir(path)
@@ -91,6 +91,10 @@ class VolumeService(object):
 			return 204
 		return 404
 
+	def getPath(self):
+		if os.path.exists(self._path):
+			return self._path
+		return None
 	def _getSize(self,path):
 		size = 0
 		if os.path.isdir(path):

@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 # from rest_framework.authtoken.models import Token
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from .models import Image
+from .models import Image,Repository,Process
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -31,8 +31,24 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-class ImageSerializer(serializers.HyperlinkedModelSerializer):
+class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = ('url','id','repository','status','detail','tag','isbuild')
+        fields = ('id','repository','status','detail','tag','isbuild','builddir')
     detail = serializers.CharField(read_only=True,source="get_status_display")
+    builddir = serializers.CharField(write_only=True)
+
+class RepoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Repository
+        fields = ('name','namespace','description','user','tag_count','created')
+    # url = serializers.HyperlinkedField(lookup_field="name")
+    created = serializers.DateTimeField(read_only=True)
+    tag_count= serializers.IntegerField(source="tagCount",read_only=True)
+    # description = serializers.CharField(write_only=True)
+
+class ProcessSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Process
+        fields = ('pid','image','status','detail','pr')
+    detail = serializers.DictField(source="getDetail",read_only=True)

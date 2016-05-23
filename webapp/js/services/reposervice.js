@@ -1,4 +1,4 @@
-app.service('Repo',['$http','BASE_URL','$q',
+app.service('Image',['$http','BASE_URL','$q',
 		function($http,base_url,$q){
 
 			var _list=[]
@@ -37,16 +37,42 @@ app.service('Repo',['$http','BASE_URL','$q',
 					_page.query=page.query;
 			}
 
+			this.pull=function(data){
+				
+				var deferred = $q.defer();
+				$http.post(_url+"pull/",data).then(
+					function(response){
+
+						deferred.resolve(response.data);
+					},function(x){
+						deferred.reject(x.data);
+					})
+				return deferred.promise;
+			}
+
+			this.build=function(data){
+				
+				var deferred = $q.defer();
+				$http.post(_url+"build/",data).then(
+					function(response){
+
+						deferred.resolve(response.data);
+					},function(x){
+						deferred.reject(x.data);
+					})
+				return deferred.promise;
+			}
+
 
 
 
 
 		}])
-	.service('Hubrepo',['$http','BASE_URL','$q',
+	.service('Repo',['$http','BASE_URL','$q',
 		function($http,base_url,$q){
 
 			var _list={}
-			var _page={page:1,page_size:10,query:''}
+			var _page={page:1,page_size:10,query:'',namespace:''}
 			var _url = base_url+"api/repos/";
 			var _detail={}
 			var _tags={}
@@ -108,13 +134,22 @@ app.service('Repo',['$http','BASE_URL','$q',
 				return _page;
 			}
 			this.setPage=function(page){
-				_page=page;
+				if(page.page)
+					_page.page=page.page;
+				if(page.page_size)
+					_page.page_size=page.page_size;
+				if(page.query)
+					_page.query=page.query;
+				_page.namespace=page.namespace;
 			}
 			this.getTagPage=function(page){
 				return _tag_page;
 			}
 			this.setTagPage=function(page){
-				_tag_page=page;
+				if(page.page)
+					_tag_page.page=page.page;
+				if(page.page_size)
+					_tag_page.page_size=page.page_size;
 			}
 
 

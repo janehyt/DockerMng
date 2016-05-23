@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*- 
 from django.db import models
 from django.contrib.auth.models import User
+import json
 
 class Volume(models.Model):
 	name = models.CharField(max_length=150)
@@ -14,8 +15,9 @@ class Volume(models.Model):
 		return self.name
 
 class Repository(models.Model):
+	LOCAL="local"
 	name = models.CharField(max_length=150)
-	namespace = models.CharField(max_length=150,default="locale")
+	namespace = models.CharField(max_length=150,default=LOCAL)
 	user = models.ForeignKey(User,on_delete=models.CASCADE,verbose_name="owner",related_name="repositories")
 	description=models.TextField(default="",blank=True)
 	created = models.DateTimeField(auto_now_add=True)
@@ -27,7 +29,10 @@ class Repository(models.Model):
 	def __unicode__(self):
 		return self.namespace+"/"+self.name
 	def get_absolute_url(self):
-		return "/"+self.id
+		return "/"+self.name+"/?namespace="+self.namespace
+
+	def tagCount(self):
+		return Image.objects.filter(repository=unicode(self)).count()
 
 class Image(models.Model):
 	PULLING = "PU"
@@ -46,6 +51,7 @@ class Image(models.Model):
 	status = models.CharField(max_length=2,
 		choices=STATUS_CHOICES,default=PULLING)
 	isbuild = models.BooleanField(default=False)
+	builddir = models.CharField(default="",blank=True,max_length=150)
 	class Meta:
 		unique_together=(('repository','tag'),)
 	def __unicode__(self):
@@ -59,7 +65,8 @@ class Image(models.Model):
 
 #拉取进度或构建进度
 class Process(models.Model):
-	pid = models.CharField(max_length = 12,default="000000000000")
+	DEFAULT="000000000000"
+	pid = models.CharField(max_length = 150,default=DEFAULT)
 	status = models.CharField(max_length = 100,blank=True)
 	image = models.ForeignKey(Image,on_delete=models.CASCADE,
 		related_name="processes",related_query_name="process")
@@ -73,8 +80,8 @@ class Process(models.Model):
 		return self.id
 	def getDetail(self):
 		result={}
-		if len(self.detail)>0:
-			result=json.loads(self.detail)
+		# if len(self.detail)>0:
+		result=json.loads(self.detail)
 		return result
 
 class Container(models.Model):

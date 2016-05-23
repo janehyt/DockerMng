@@ -9,13 +9,19 @@ div(ng-controller="RepoDetailCtrl")
 		.panel
 			.panel-heading.bg-dark
 				.h2.text-lt {{name}}
-				.row.wrapper
+				.row.wrapper(ng-if="$state.params.namespace!='local'")
 					.col-sm-4.text-lt 最近更新: 
 						span.label.label-info {{data.last_updated|time}}
 					.col-sm-4.text-lt 拉取数: 
 						span.label.label-info {{data.pull_count|largeNumber}}
+				.row.wrapper(ng-if="$state.params.namespace=='local'")
+					.col-sm-4.text-lt 创建时间: 
+						span.label.label-info {{data.created|time}}
+					.col-sm-4.text-lt 已有镜像数: 
+						span.label.label-info {{data.tag_count}}
 				span.wrapper
-					button.btn.btn-primary.btn-sm(ng-click="pull('latest')") 拉取latest版本
+					button.btn.btn-primary.btn-sm(ng-if="$state.params.namespace!='local'",ng-click="pull('latest')") 拉取latest版本
+					
 				
 			.panel-body
 				tabset.tab-container
@@ -25,7 +31,7 @@ div(ng-controller="RepoDetailCtrl")
 					tab(select="loadTags()")
 						tab-heading 版本
 						.wrapper
-							ul.list-group.list-group-alt.list-group-lg.no-borders.pull-in.m-b-none
+							ul.list-group.list-group-alt.list-group-lg.no-borders.pull-in.m-b-none(ng-if="$state.params.namespace!='local'")
 								li.list-group-item.row
 									.col-xs-3 标签
 									.col-xs-3 更新
@@ -39,12 +45,38 @@ div(ng-controller="RepoDetailCtrl")
 									.pull-right
 										button.btn.btn-default(ng-click="pull(tag.name)") 拉取	
 							.table-responsive
+
+								table.table.table-striped.b-t.b-light(ng-if="$state.params.namespace=='local'")
+									thead
+										tr
+											th.col-xs-3 名称
+											th.col-xs-2 标签
+											th.col-xs-2 状态
+											//- th.col-xs-4 描述
+											th.col-xs-3 操作
+									tbody.wrapper
+										tr(ng-repeat="item in tags.results")
+											td
+												| {{item.repository}}
+											td {{item.tag}}
+											//- td {{item.description}}
+											td 
+												span.label(ng-class="item.detail|stateClass") {{item.detail}}
+											td
+												.btn-group.dropdown(dropdown="")
+													button.btn.btn-default(type="button",ng-click="publish(item)",ng-if="item.status=='EX'") 部署
+												.btn-group.dropdown(dropdown="")
+													button.btn.btn-default(type="button",ng-click="publish(item)",ng-if="item.status!='EX'") 重试构建
+												.btn-group.dropdown(dropdown="")
+													button.btn.btn-danger(type="button",ng-click="publish(item)",ng-if="item.status!='BD'") 移除
+								h3.text-primary.text-center(ng-if="!tags.results||tags.results.length==0") 暂无镜像显示
+
 								.pull-right
 								
 									.form-inline
 										span 共
-											strong {{page.count}}
-											| 个应用,每页显示
+											strong {{tags.count}}
+											| 个标签,每页显示
 										select.form-control(ng-model="tags.page.page_size",ng-change="loadTags(1)")
 											option(value="5") 5
 											option(value="10") 10
@@ -59,10 +91,48 @@ div(ng-controller="RepoDetailCtrl")
 												option(ng-repeat="i in tags.array track by $index") {{$index+1}}
 											span.input-group-btn
 												button.btn.btn-default(ng-disabled="!tags.next",ng-click="loadTags(tags.page.page+1)") 下一页
-							//- .pull-right
-								a.btn.btn-default.btn-sm(ng-disabled="!tags.previous",ng-click="loadTags(tags.previous)") 上一页
-								a.btn.btn-default.btn-sm(ng-disabled="!tags.next",ng-click="loadTags(tags.next)") 下一页
+					
+					tab(ng-if="$state.params.namespace=='local'",select="loadFiles(path)")
+						tab-heading 构建镜像
+						.wrapper
+							form.form-horizontal.form-validation(name="CreateForm")
+								.form-group
+									label.col-sm-2.control-label 镜像标签
+									.col-sm-8
+										input.form-control(type="text",required="true",ng-model="image.tag",placeholder="请输入镜像标签，不能为空")
+									.text-danger.help-block *
+								.form-group
+									label.col-sm-2.control-label 构建目录
+									.col-sm-8
+										//- input.form-control(type="text",required="true",ng-model="path")
+										ul.breadcrumb.bg-white.b-a
+												li(ng-repeat="b in files.bread")
+													a(ng-click="loadFiles(b.path)",ng-class="(files.bread.length==$index+1)?'active':''")
+														i(ng-if="$index==0").fa.fa-home
+														| {{b.name}}
+								.form-group
+									label.col-sm-2.control-label 目录内容
+									
+									.col-sm-8
+										button.btn.btn-default(ng-click="isCollapsed=!isCollapsed",type="button") {{isCollapsed?'展开':'隐藏'}}
+										.table-responsive(collapse="isCollapsed")
+											
+											table.table.table-striped.b-t.b-light
+												thead
+													tr
+														th 名字
+														th 类型
+														th 操作
+												tbody
+													tr(ng-repeat="item in files.list")
+														td
+															strong {{item.name}}
+														td {{item.isfile?'文件':'文件夹'}}
 
-							
+														td(nowrap="")
 
-
+															.btn-group.dropdown(dropdown="")
+																button.btn.btn-default(type="button",ng-if="!item.isfile",ng-click="loadFiles(item.path)") 打开
+								.form-group
+									.col-sm-8.col-sm-offset-2
+										input.btn.btn-default.pull-right(ng-disabled="CreateForm.$invalid",value="构建镜像",type="submit",ng-click="create(image.tag)")

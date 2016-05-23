@@ -103,7 +103,7 @@ angular.module('app')
                   templateUrl: 'app/views/repo_list.html',
               })
               .state('app.repo',{
-                url:'/repos/:namespace/:name',
+                url:'/repos/:namespace/:name?tab',
                 templateUrl: 'app/views/repo_detail.html',
               })
               .state('app.file', {

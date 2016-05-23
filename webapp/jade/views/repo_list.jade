@@ -60,15 +60,67 @@ div(ng-controller="RepoListCtrl")
 												option(ng-repeat="i in images.array track by $index") {{$index+1}}
 											span.input-group-btn
 												button.btn.btn-default(ng-disabled="!images.next",ng-click="loadImages(images.page.page+1)") 下一页
-					tab(active="tabs[1]")
+					tab(select="loadRepos()",active="tabs[1]")
 						tab-heading 我的仓库
 						.wrapper
+							form.m-b-md(ng-submit="loadRepos(1)",name="searchForm")
+								.input-group.col-sm-4
+									input.input-md.form-control(type="text",placeholder="搜索仓库",ng-model="repos.page.query")
+									span.input-group-btn
+										input.btn.btn-md.btn-default(type="submit",value="搜索")
+							.table-responsive
+								table.table.table-striped.b-t.b-light
+									thead
+										tr
+											th.col-xs-4 名称
+											th.col-xs-2 已有镜像
+											th.col-xs-2 创建时间
+											//- th.col-xs-4 描述
+											th.col-xs-4 操作
+									tbody.wrapper
+										tr(ng-repeat="item in repos.results")
+											td
+												| {{item.namespace|filterOfficial}} {{item.name}}
+											td {{item.tag_count}}
+											td {{item.created|time}}
+											//- td {{item.description}}
+											td
+												.btn-group.dropdown(dropdown="")
+													button.btn.btn-default(type="button",ng-click="detail(item.name,item.namespace)") 查看详情
+													button.btn.btn-default(dropdown-toggle="")
+														span.caret
+													ul.dropdown-menu
+														li
+															a(ng-click="detail(item.name,item.namespace)") 查看详情
+														li
+															a(ng-click="build(item)") 在此构建镜像
+								h3.text-primary.text-center(ng-if="!repos.results||repos.results.length==0") 暂无仓库
+				
+								.pull-right
+							
+									.form-inline
+										span 共
+											strong {{repos.count}}
+											| 个仓库,每页显示
+										select.form-control(ng-model="repos.page.page_size",ng-change="loadRepos(1)")
+											option(value="5") 5
+											option(value="10") 10
+											option(value="15") 15
+											option(value="20") 20
+									.form-inline
+										.input-group
+											span.input-group-btn
+												button.btn.btn-default(ng-disabled="!repos.previous",ng-click="loadRepos(repos.page.page-1)") 上一页
+											select.form-control(ng-model="repos.page.page",ng-change="loadRepos()")
+												option(ng-repeat="i in repos.array track by $index") {{$index+1}}
+											span.input-group-btn
+												button.btn.btn-default(ng-disabled="!repos.next",ng-click="loadRepos(repos.page.page+1)") 下一页
 					tab(select="loadData()",active="tabs[2]")
 						tab-heading DockerHub仓库
 						.wrapper
-							form.m-b-md(ng-submit="loadData(1)",name="searchForm")
+							form.m-b-md(ng-submit="loadData(1)",name="searchDataForm")
 								.input-group.col-sm-4
-									input.input-md.form-control(type="text",placeholder="搜索镜像",ng-model="repos.page.query")
+									input.input-md.form-control(type="text",placeholder="搜索仓库",ng-model="data.page.query")
 									span.input-group-btn
 										input.btn.btn-md.btn-default(type="submit",value="搜索")
 							.table-responsive
@@ -81,7 +133,7 @@ div(ng-controller="RepoListCtrl")
 											//- th.col-xs-4 描述
 											th.col-xs-4 操作
 									tbody.wrapper
-										tr(ng-repeat="item in repos.results")
+										tr(ng-repeat="item in data.results")
 											td
 												| {{item.namespace|filterOfficial}} {{item.name}}
 											td {{item.star_count|largeNumber}}
@@ -89,23 +141,23 @@ div(ng-controller="RepoListCtrl")
 											//- td {{item.description}}
 											td
 												.btn-group.dropdown(dropdown="")
-													button.btn.btn-default(type="button",ng-click="detail(item.name)") 查看详情
+													button.btn.btn-default(type="button",ng-click="detail(item.name,item.namespace)") 查看详情
 													button.btn.btn-default(dropdown-toggle="")
 														span.caret
 													ul.dropdown-menu
 														li
-															a(ng-click="detail(item.name)") 查看详情
+															a(ng-click="detail(item.name,item.namespace)") 查看详情
 														li
-															a(ng-click="pull(item)") 拉取latest版本
-								h3.text-primary.text-center(ng-if="!repos.results||repos.results.length==0") 暂无镜像显示
+															a(ng-click="pull(item.name,item.namespace,'latest')") 拉取latest版本
+								h3.text-primary.text-center(ng-if="!data.results||data.results.length==0") 暂无仓库显示
 				
 								.pull-right
 							
 									.form-inline
 										span 共
-											strong {{repos.count}}
+											strong {{data.count}}
 											| 个仓库,每页显示
-										select.form-control(ng-model="repos.page.page_size",ng-change="loadData(1)")
+										select.form-control(ng-model="data.page.page_size",ng-change="loadData(1)")
 											option(value="5") 5
 											option(value="10") 10
 											option(value="15") 15
@@ -113,9 +165,9 @@ div(ng-controller="RepoListCtrl")
 									.form-inline
 										.input-group
 											span.input-group-btn
-												button.btn.btn-default(ng-disabled="!repos.previous",ng-click="loadData(repos.page.page-1)") 上一页
-											select.form-control(ng-model="repos.page.page",ng-change="loadData()")
-												option(ng-repeat="i in repos.array track by $index") {{$index+1}}
+												button.btn.btn-default(ng-disabled="!data.previous",ng-click="loadData(data.page.page-1)") 上一页
+											select.form-control(ng-model="data.page.page",ng-change="loadData()")
+												option(ng-repeat="i in data.array track by $index") {{$index+1}}
 											span.input-group-btn
-												button.btn.btn-default(ng-disabled="!repos.next",ng-click="loadData(repos.page.page+1)") 下一页
+												button.btn.btn-default(ng-disabled="!data.next",ng-click="loadData(data.page.page+1)") 下一页
 					

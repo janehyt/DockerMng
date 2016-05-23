@@ -12,6 +12,7 @@ app
 				$http.get(_url,{params:{path:path}}).then(
 					function(response){
 						_files=response.data;
+						console.info(_files);
 						deferred.resolve();
 					},function(x){
 						deferred.reject(x);

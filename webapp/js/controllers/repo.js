@@ -1,5 +1,5 @@
-app.controller('RepoListCtrl',['$scope','$state','Repo','Hubrepo',
-	function($scope,$state,Repo,Hubrepo){
+app.controller('RepoListCtrl',['$scope','$state','Image','Repo','filterOfficialFilter',
+	function($scope,$state,Image,Repo,filterOfficialFilter){
 	
 
 	$scope.loadImages=function(page){
@@ -8,32 +8,44 @@ app.controller('RepoListCtrl',['$scope','$state','Repo','Hubrepo',
 		$scope.images.next=null;
 		$scope.images.previous=null;
 		if($scope.images.page)
-			Repo.setPage($scope.images.page);
-		Repo.list().then(function(){
-			$scope.images=Repo.getList();
+			Image.setPage($scope.images.page);
+		Image.list().then(function(){
+			$scope.images=Image.getList();
 		})
 	}
 
 
-	$scope.loadData=function(page){
+	$scope.loadRepos=function(page){
+		$scope.repos.page.namespace="local";
 		if($scope.repos.page&&page)
 			$scope.repos.page.page=page;
 		$scope.repos.next=null;
 		$scope.repos.previous=null;
 		if($scope.repos.page)
-			Hubrepo.setPage($scope.repos.page);
-		Hubrepo.list().then(function(){
-			$scope.repos=Hubrepo.getList();
+			Repo.setPage($scope.repos.page);
+		Repo.list().then(function(){
+			$scope.repos=Repo.getList();
 		})
 		
 	}
 
-	$scope.detail=function(name){
-		if(name.indexOf("/")!=-1){
-			var list = name.split("/");
-			$state.go('app.repo',{name:list[1],namespace:list[0]});
-		}else
-			$state.go('app.repo',{name:name,namespace:"library"});
+	$scope.loadData=function(page){
+		$scope.data.page.namespace="";
+		if($scope.data.page&&page)
+			$scope.data.page.page=page;
+		$scope.data.next=null;
+		$scope.data.previous=null;
+		if($scope.data.page)
+			Repo.setPage($scope.data.page);
+		Repo.list().then(function(){
+			$scope.data=Repo.getList();
+		})
+		
+	}
+
+
+	$scope.detail=function(name,namespace){
+			$state.go('app.repo',{name:name,namespace:namespace});
 	}
 
 	$scope.publish=function(item){
@@ -44,13 +56,21 @@ app.controller('RepoListCtrl',['$scope','$state','Repo','Hubrepo',
 		// }else
 		// 	$state.go('app.publish',{name:name,namespace:"library",tag:"latest"});
 	}
-	$scope.pull=function(item){
-		console.info(item);
+	$scope.pull=function(name,namespace,tag){
+		var repository = filterOfficialFilter(namespace)+name;
+		// console.info(repository);
+		Image.pull({repository:repository,tag:tag}).then(
+			function(data){
+				console.info(data);
+			},function(x){
+				console.info(x);
+			})
 	}
 	$scope.init = function(){
 		$scope.title="镜像仓库";
-		$scope.repos={};
+		$scope.repos={page:{namespace:'local'}};
 		$scope.images={};
+		$scope.data={page:{namespace:''}};
 		$scope.tabs=[true,false,false];
 		if($state.params.tab){
 			$scope.tabs[$state.params.tab]=true;
@@ -64,53 +84,95 @@ app.controller('RepoListCtrl',['$scope','$state','Repo','Hubrepo',
 	
 
 }]);
-app.controller('RepoDetailCtrl',['$scope','$state','$sce','filterOfficialFilter','Hubrepo',
-	function($scope,$state,$sce,filterOfficial,Hubrepo){
+app.controller('RepoDetailCtrl',['$scope','$state','$sce','filterOfficialFilter','Repo','Image','File',
+	function($scope,$state,$sce,filterOfficial,Repo,Image,File){
 
 
 	$scope.loadData=function(){	
 		// console.info("data");
-		$scope.tab=1;
-		Hubrepo.load($state.params.namespace,$state.params.name).then(
+		$scope.tab=0;
+		Repo.load($state.params.namespace,$state.params.name).then(
 			function(data){
 				$scope.data=data;
 			},function(){})
 	}
 	$scope.loadTags=function(page){
 		// console.info("tag");
-		$scope.tab=2;
+		$scope.tab=1;
 		if($scope.tags.page&&page)
 			$scope.tags.page.page=page;
 		$scope.tags.next=null;
 		$scope.tags.previous=null;
 		if($scope.tags.page)
-			Hubrepo.setTagPage($scope.tags.page);
-		Hubrepo.tags($state.params.namespace,$state.params.name).then(function(){
-			$scope.tags=Hubrepo.getTags();
+			Repo.setTagPage($scope.tags.page);
+		Repo.tags($state.params.namespace,$state.params.name).then(function(){
+			$scope.tags=Repo.getTags();
+			console.info($scope.tags);
 		})
 	}
+	$scope.loadFiles = function(path){
+		$scope.tab=2;
+      File.list(path).then(function(){
+        // console.info(File.getFiles());
+        $scope.files = File.getFiles();
+        if(path){
+          $scope.path = path;
+        }
+      });
+    }
 
 	
 	$scope.loadHtmlData=function(data){
 		return $sce.trustAsHtml($scope.data.full_description);
 	}
-	// $scope.isOfficial=function(namespace){
-	// 	return namespace=="library"?true:false
-	// }
-	
 	$scope.pull=function(data){
-		// var detail = $scope.name+":"+data
-		var params=$state.params;
-		params.tag=data;
-		console.info(params);
-		$state.go('app.publish',params)
+		var repository = $scope.name;
+		// console.info(repository);
+		Image.pull({repository:repository,tag:data}).then(
+			function(response){
+				console.info(response);
+
+			},function(x){
+				console.info(x);
+			});
 		
 	}
+	$scope.build=function(){
+		console.info("构建");
+	}
+	$scope.publish = function(data){
+		console.info("部署");
+	}
+	$scope.create=function(tag){
+		var repository = $scope.name;
+		Image.build({repository:repository,tag:tag,builddir:$scope.path}).then(
+			function(response){
+				console.info(response);
 
-	$scope.title="镜像仓库";
-	$scope.name=filterOfficial($state.params.namespace)+$state.params.name
-	$scope.data={full_description:"",last_updated:"",pull_count:0};
-	$scope.tags={}
+			},function(x){
+				console.info(x);
+			});
+	}
+
+	$scope.init=function(){
+		$scope.title="镜像仓库";
+		$scope.name=filterOfficial($state.params.namespace)+$state.params.name;
+		$scope.data={full_description:"",last_updated:"",pull_count:0};
+		$scope.tags={};
+		$scope.files={};
+		$scope.path="";
+		// $scope.tabs=[false,false,false];
+		// var active = $state.params["tab"] | 0;
+		// for(var i in $scope.tabs){
+		// 	if(i==active)
+		// 		$scope.tabs[i]=true
+		// 	else
+		// 		$scope.tabs[i]=false
+		// }
+		$scope.tab=$state.params["tab"];
+		// console.info(active);
+	}
+	$scope.init()
 	
 
 }]);

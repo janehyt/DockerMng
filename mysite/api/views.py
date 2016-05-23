@@ -11,12 +11,15 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes,detail_route,list_route
 from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.reverse import reverse
 from django.http import StreamingHttpResponse
-from .serializers import UserSerializer,ImageSerializer
+from docker import errors
+
+from .serializers import UserSerializer,ImageSerializer,RepoSerializer,ProcessSerializer
 from .files import VolumeService
-from .dockerconn import DockerHub
-from .models import Image
-import markdown
+from .dockerconn import DockerHub,DockerClient
+from .models import Image,Repository,Process
+import markdown,json
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
@@ -69,12 +72,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if auth.authenticate(username=user.username,password = oldpass):
             user.set_password(password)
             user.save()
-            # user = auth.authenticate(username=user.username,password = password)
-            # auth.login(request,user)
-            # print user.is_active
             return Response(True)
-        
-
         return Response("原密码错误",status=400)
     @list_route(methods=['POST'])
     def log_out(self, request):
@@ -105,18 +103,126 @@ class ImageViewSet(viewsets.ModelViewSet):
         
         return pagination.get_paginated_response(images)
 
-class RepoViewSet(viewsets.ViewSet):
+    @list_route(methods=['POST'])
+    def pull(self, request):
+        data = request.data
+        repository = data.get("repository","")
+        tag = data.get("tag","")
+        user = request.user
+        if repository and tag:
+            image = Image.objects.get_or_create(repository=repository,tag=tag)[0]
+            users =  image.users.filter(pk=user.id)
+            if user not in users:
+                add = image.users.add(user)
+                image.save()
+            if not image.isbuild:
+                image.status=Image.PULLING
+                image.save()
+                ps = image.processes.all().delete()
+                try:
+                    cli = DockerClient().getClient()
+                    pull_image = cli.pull(unicode(image),stream=True)
+                    for line in pull_image:
+                        pr = json.loads(line)
+                        status = pr.get("status","")
+                        p_id = pr.get("id",Process.DEFAULT)
+                        # if "Pulling from" not in status:
+                        process = Process.objects.get_or_create(image=image,pid=p_id)[0]
+                        process.status=status
+                        detail = pr.get("progressDetail",{})
+                        process.detail=json.dumps(detail)
+                        process.pr = pr.get("progress","")
+                        process.save()
+                    if "Status: Downloaded newer image" in status or "Status: Image is up to date" in status:
+                        image.status=Image.EXISTED
+                        image.save()
+                        ps = image.processes.all().delete()
+                    else:
+                        image.status=Image.ERROR
+                        image.save()
+                        return Response({"detail":"Error occurs when pulling image"},status=408)
+                except errors.APIError,e:
+                    image.status=Image.ERROR
+                    image.save()
+                    return Response({"reason":e.response.reason,
+                        "detail":e.explanation},status=e.response.status_code)
+
+            return Response(ImageSerializer(image).data)
+        else:
+            return Response({"detail":"请提供repository和tag"},status=400)
+
+    @list_route(methods=['POST'])
+    def build(self, request):
+        data = request.data
+        user = request.user
+        repository = data.get("repository","")
+        tag = data.get("tag","")
+        builddir = VolumeService(user,data.get("builddir","")).getPath()
+       
+        
+        repository.split("/")
+
+        if repository and tag and builddir and repository.find(Repository.LOCAL+"/") is 0:
+            re = Repository.objects.filter(namespace=Repository.LOCAL,name=repository.split("/")[1])
+            if len(re) is 1:
+                data["builddir"]=builddir
+                data["isbuild"]=True
+                data["status"]=Image.BUILDING
+                serializer = ImageSerializer(data=data)
+                if serializer.is_valid():
+                    image = serializer.save()
+                    image.users.add(user)
+                    image.save()
+                    return Response(serializer.data)
+                else:
+                    return Response("该仓库下已存在该标签构建的镜像",status=400)
+            else:
+               pass
+        return Response("请给出合适的repository、tag、path",status=400)
+
+    @detail_route()
+    def process(self,request,pk=None):
+        image = get_object_or_404(self.queryset, pk=pk,users=request.user)
+        
+        if image.status == Image.PULLING or image.status==Image.BUILDING:
+            processes = image.processes.all()
+            # print type(processes)
+            serializer = ProcessSerializer(processes,many=True)
+            # print serializer.data
+            return Response(serializer.data)
+        return Response("OK")
+
+class RepoViewSet(viewsets.ModelViewSet):
+
+    queryset = Repository.objects.all()
+    serializer_class = RepoSerializer
+    pagination_class = StandardResultsSetPagination
+
     def list(self,request):
+        
+        query = request.query_params.get("query","")
+        namespace = request.query_params.get("namespace","library")
+
+        if namespace==Repository.LOCAL:
+            pagination = self.pagination_class()
+            
+            queryset = Repository.objects.filter(user=request.user,name__contains=query)
+
+            data = pagination.paginate_queryset(queryset,request)
+
+            serializer = RepoSerializer(data,many=True)
+            repos = serializer.data
+            
+            return pagination.get_paginated_response(repos)
+
         base_url = "http://"+request.get_host()+request.path
         cli  = DockerHub()
-        query = request.query_params.get("query")
         if query:
             data=cli.searchRepo(request.query_params)
             
         else:
-            namespace = request.query_params.get("namespace")
+            # namespace = request.query_params.get("namespace")
             data = cli.getRepoList(namespace,request.query_params)
-
 
         r_previous = data.get('previous')
         r_next = data.get('next')
@@ -134,8 +240,15 @@ class RepoViewSet(viewsets.ViewSet):
             ("results",data.get('results'))]))
 
     def retrieve(self,request,pk=None):
+        
+        namespace = request.query_params.get("namespace","library")
+        if namespace==Repository.LOCAL:
+            data = get_object_or_404(self.queryset, name=pk,user=request.user)
+            re = RepoSerializer(data).data
+            re["full_description"]=markdown.markdown(data.description,extensions=['markdown.extensions.tables','markdown.extensions.fenced_code'])
+            return Response(re)
+        
         cli  = DockerHub()
-        namespace = request.query_params.get("namespace")
         data=cli.getRepoDetail(pk,namespace)
         mk = data.get("full_description")
         if mk:
@@ -144,15 +257,30 @@ class RepoViewSet(viewsets.ViewSet):
             return Response(data,status=404)
         return Response(data)
 
+    def create(self,request):
+        data = request.data
+        data["namespace"] = Repository.LOCAL
+        data["user"]=request.user.id
+        serializer = RepoSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        return Response(serializer.save())
     @detail_route()
     def tags(self,request,pk=None):
+        namespace = request.query_params.get("namespace","library")
+        tag_name = request.query_params.get("name","")
+
+        if namespace==Repository.LOCAL:
+            queryset = Image.objects.filter(repository=namespace+"/"+pk,tag__contains=tag_name)
+            pagination = StandardResultsSetPagination()
+            data = pagination.paginate_queryset(queryset,request)
+
+            return pagination.get_paginated_response(ImageSerializer(data,many=True).data)
+
         base_url = "http://"+request.get_host()+request.path
         cli = DockerHub()
-        namespace = request.query_params.get("namespace")
-        tag_name = request.query_params.get("name")
-        # params={}
-        # params['page']=request.query_params.get("page",1)
-        # params['page_size'] = request.query_params.get('page_size')
+        
+        
         data=cli.getRepoTags(pk,namespace,tag_name,request.query_params)
         r_previous = data.get('previous')
         r_next = data.get('next')
@@ -203,7 +331,7 @@ class VolumeViewSet(viewsets.ViewSet):
         if path and name:    
             files = VolumeService(request.user,path)
             return Response(files.rename(name))
-        return Response({"detail":"请提供path和name"},status=406)
+        return Response({"detail":"请提供path和name"},status=400)
 
     @list_route(methods=['POST'])
     def remove(self,request):
@@ -212,7 +340,7 @@ class VolumeViewSet(viewsets.ViewSet):
         if path: 
             files = VolumeService(request.user,path)
             return Response(files.remove())
-        return Response({"detail":"请提供path"},status=406)
+        return Response({"detail":"请提供path"},status=400)
 
     @list_route(methods=['POST'])
     def mkdir(self,request):
@@ -221,7 +349,7 @@ class VolumeViewSet(viewsets.ViewSet):
         if name:    
             files = VolumeService(request.user,path)
             return Response(status=files.mkdir(name))
-        return Response({"detail":"请提供path和name"},status=406)
+        return Response({"detail":"请提供path和name"},status=400)
 
     @list_route(methods=['POST'])
     def unzip(self,request):
@@ -229,4 +357,4 @@ class VolumeViewSet(viewsets.ViewSet):
         if path:    
             files = VolumeService(request.user,path)
             return Response(status=files.unzip())
-        return Response({"detail":"请提供path"},status=406)
+        return Response({"detail":"请提供path"},status=400)

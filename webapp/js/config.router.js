@@ -18,7 +18,7 @@ angular.module('app')
                 $state.go("app.dashboard");
               }
               $rootScope.user=User.getUser();
-              console.info($rootScope.user);
+              // console.info($rootScope.user);
             },function(){
               if($state.current.name.indexOf('page.')==0){}
               else{

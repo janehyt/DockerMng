@@ -1,133 +1,142 @@
-# -*- coding: UTF-8 -*- 
-import os,shutil,zipfile
+'''files'''
+# -*- coding: UTF-8 -*-
+import os
+import shutil
+import zipfile
 from mysite import settings
 from .models import Volume
 class VolumeService(object):
+    '''VolumeService'''
 
-	def __init__(self,user,path=""):
-		self._root = os.path.join(settings.UPLOAD_ROOT,str(user))
-		if not os.path.isdir(self._root):
-			os.makedirs(self._root)
-		self._path = os.path.join(self._root,path)
-		self._setBread(str(user),path)
-		
-	def list(self):
-		if os.path.isdir(self._path):
-			dir_list = os.listdir(self._path)
-			result = []
-			for p in dir_list:
-				full = os.path.join(self._path,p)
-				
-				item={"name":p,"isfile":os.path.isfile(full),
-					"editable":self._editable(full),
-					"path":full[len(self._root)+1:],
-					"size":self._getSize(full)}
-				result.append(item)
+    def __init__(self, user, path=""):
+        self.__root = os.path.join(settings.UPLOAD_ROOT, str(user))
+        if not os.path.isdir(self.__root):
+            os.makedirs(self.__root)
+        self.__path = os.path.join(self.__root, path)
+        self.__set_bread(str(user), path)
 
-			return {"bread":self._bread,"list":result}
-		return None
+    def list(self):
+        '''list'''
+        if os.path.isdir(self.__path):
+            dir_list = os.listdir(self.__path)
+            result = []
+            for name in dir_list:
+                full = os.path.join(self.__path, name)
+                item = {"name":name, "isfile":os.path.isfile(full),\
+                    "editable":self.__editable(full),\
+                    "path":full[len(self.__root)+1:],\
+                    "size":self.__get_size(full)}
+                result.append(item)
 
-	def download(self):
-		if os.path.isfile(self._path):
-			name = os.path.basename(self._path)
-			return {"name":name,"stream":self._file_iterator(self._path)}
-		return None
-	def mkdir(self,name):
-		path = os.path.join(self._path,name)
-		if not os.path.isdir(path):
-			os.makedirs(path)
-			return 204
-		return 403
+            return {"bread":self.__bread, "list":result}
+        return None
 
-	def fileUpload(self,filename,file):
-		# upload_dir = getUploadDir(path)
-		if not os.path.exists(self._path):
-		    os.makedirs(self._path)
-		filename =os.path.join(self._path,filename)
-		
-		if os.path.exists(filename):
-		    return 403
-		with open(filename,'wb+') as destination:
-		    for chunk in file.chunks():
-		        destination.write(chunk)
-		    destination.close()
-		        
-		return 204
-	def rename(self,name):
-		if os.path.exists(self._path) and self._editable(self._path):
-			name = os.path.join(os.path.dirname(self._path),name)
-			# print 
-			os.rename(self._path,name)
-			return 204
-		return 403
-	def remove(self):
-		if os.path.exists(self._path) and self._editable(self._path):
-			if os.path.isfile(self._path):
-				os.remove(self._path)
-			elif os.path.isdir(self._path):
-				shutil.rmtree(self._path)
-			return 204
-		return 403
+    def download(self):
+        '''download'''
+        if os.path.isfile(self.__path):
+            name = os.path.basename(self.__path)
+            return {"name":name, "stream":self.__file_iterator()}
+        return None
+    def mkdir(self, name):
+        '''mkdir'''
+        path = os.path.join(self.__path, name)
+        if not os.path.isdir(path):
+            os.makedirs(path)
+            return 204
+        return 403
 
-	def unzip(self):
-		basename=os.path.basename(self._path)
-		splits = os.path.splitext(basename)
-		zipdirname = os.path.join(os.path.dirname(self._path),splits[0])
-		if splits[1] == ".zip" and os.path.exists(self._path) and not os.path.isdir(zipdirname):
-		
-			zfile = zipfile.ZipFile(self._path,'r')
-			for filename in zfile.namelist():
-				
-				if not filename.endswith('/'):
-					f = os.path.join(zipdirname,filename)
-					dirname = os.path.dirname(f)
-					if not os.path.exists(dirname):
-						os.makedirs(dirname)
-					data = zfile.read(filename)
-					file = open(f, 'w+b')
-					file.write(data)
-					file.close()
+    def file_upload(self, filename, fileobj):
+        '''upload'''
+        if not os.path.exists(self.__path):
+            os.makedirs(self.__path)
+        filename = os.path.join(self.__path, filename)
+        if os.path.exists(filename):
+            return 403
+        with open(filename, 'wb+') as destination:
+            for chunk in fileobj.chunks():
+                destination.write(chunk)
+            destination.close()
+        return 204
+    def rename(self, name):
+        '''rename'''
+        if os.path.exists(self.__path) and self.__editable(self.__path):
+            name = os.path.join(os.path.dirname(self.__path), name)
+            os.rename(self.__path, name)
+            return 204
+        return 403
+    def remove(self):
+        '''remove'''
+        if os.path.exists(self.__path) and self.__editable(self.__path):
+            if os.path.isfile(self.__path):
+                os.remove(self.__path)
+            elif os.path.isdir(self.__path):
+                shutil.rmtree(self.__path)
+            return 204
+        return 403
 
-			return 204
-		return 404
+    def unzip(self):
+        '''unzip'''
+        basename = os.path.basename(self.__path)
+        splits = os.path.splitext(basename)
+        zipdirname = os.path.join(os.path.dirname(self.__path), splits[0])
+        if os.path.isdir(zipdirname):
+            return 403
+        if splits[1] == ".zip" and os.path.exists(self.__path):
+            zfile = zipfile.ZipFile(self.__path, 'r')
+            for filename in zfile.namelist():
+                if not filename.endswith('/'):
+                    tmpf = os.path.join(zipdirname, filename)
+                    dirname = os.path.dirname(tmpf)
+                    if not os.path.exists(dirname):
+                        os.makedirs(dirname)
+                    data = zfile.read(filename)
+                    fileobj = open(tmpf, 'w+b')
+                    fileobj.write(data)
+                    fileobj.close()
 
-	def getPath(self):
-		if os.path.exists(self._path):
-			return self._path
-		return None
-	def _getSize(self,path):
-		size = 0
-		if os.path.isdir(path):
-			for root , dirs, files in os.walk(path, True):
-				size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
-		elif os.path.isfile(path):
-			size=os.path.getsize(path)
-		return size
+            return 204
+        return 404
 
-	def _file_iterator(self,path,chunk_size=512):
-		with open(path) as f:
-			while True:
-				c = f.read(chunk_size)
-				if c:
-					yield c
-				else:
-					break
-	def _setBread(self,root,path):
-		tmp = ""
-		bread=[{"name":root,"path":tmp}]
-		paths = path.split("/")
-		for p in paths:
-			if p:
-				tmp=os.path.join(tmp,p);
-				item = {"name":p,"path":tmp}
-				bread.append(item)
-		self._bread = bread
+    def get_path(self):
+        '''getpath'''
+        if os.path.exists(self.__path):
+            return self.__path
+        return None
+    def __get_size(self, path):
+        '''_get_size'''
+        size = 0
+        if path in self.__root:
+            if os.path.isdir(path):
+                for root, dirs, files in os.walk(path, True):#pylint: disable=unused-variable
+                    size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
+            elif os.path.isfile(path):
+                size = os.path.getsize(path)
+        return size
 
-	def _editable(self,path):
-		v = Volume.objects.filter(path__contains=path).count()
-		# print v
-		return (v is 0)
-	# def getBread(self):
-		# return self._bread
+    def __file_iterator(self, chunk_size=512):
+        '''_file_iterator'''
+        with open(self.__path) as fileobj:
+            while True:
+                chunk = fileobj.read(chunk_size)
+                if chunk:
+                    yield chunk
+                else:
+                    break
+    def __set_bread(self, root, path):
+        tmp = ""
+        bread = [{"name":root, "path":tmp}]
+        paths = path.split("/")
+        for name in paths:
+            if name:
+                tmp = os.path.join(tmp, name)
+                item = {"name":name, "path":tmp}
+                bread.append(item)
+        self.__bread = bread
 
-	
+    def __editable(self, path):
+        '''__editable'''
+        if self.__root in path:
+            vol = Volume.objects.filter(path__contains=path).count()#pylint: disable=no-member
+            # print v
+            return vol is 0
+        return False

@@ -2,8 +2,18 @@
 # -*- coding: UTF-8 -*-
 import json
 from .dockerconn import DockerClient
-from .models import Process, Image
+from .models import Process, Image, Container
 from docker import errors
+
+def port_generater():
+    pscmd = "netstat -ntl |grep -v Active| grep -v Proto|awk '{print $4}'|awk -F: '{print $NF}'"
+    procs = os.popen(pscmd).read()
+    procarr = procs.split("\n")
+    tt= random.randint(10000,65534)
+    if tt not in procarr:
+        return tt
+    else:
+        port_generater()
 
 class ImageHelper(object):
     '''ImageHelper'''
@@ -106,3 +116,45 @@ class ImageHelper(object):
         process.detail = detail
         process.save()
         return detail
+
+class ContainerHelper(object):
+    '''ContainerHelper'''
+    __cli = DockerClient().get_client()
+
+    def __init__(self,container):
+        if isinstance(container, Container):
+            self.__contaienr = container
+        else:
+            raise TypeError("expect Container")
+
+    def destroy(self):
+        '''destroy'''
+        return "Response()"
+
+    def detail(self):
+        '''detail'''
+        return "Response()"
+
+    def stat(self):
+        '''stat'''
+        return "Response()"
+   
+    def run(self):
+        '''run'''
+        return "Response()"
+
+    def stop(self):
+        '''stop'''
+        return "Response()"
+
+    def pause(self):
+        '''pause'''
+        return "Response()"
+
+    def unpause(self):
+        '''unpause'''
+        return "Response()"
+
+    def restart(self):
+        '''restart'''
+        return "Response()"

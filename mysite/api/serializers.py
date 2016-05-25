@@ -75,10 +75,14 @@ class ContainerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Container
         fields = ('id', 'name', 'user', 'image', 'command', 'restart',\
-            'created','updated', 'ports')
+            'created','updated', 'ports','binds','envs','links')
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)
     ports = serializers.CharField(source="display_ports")
+    binds = serializers.CharField(source="display_binds")
+    envs = serializers.CharField(source="display_environments")
+    links = serializers.CharField(source="display_links")
+
     # environments = EnvSerializer
 
     def create(self, validated_data):

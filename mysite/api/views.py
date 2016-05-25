@@ -21,7 +21,7 @@ RepoSerializer, ProcessSerializer, ContainerSerializer
 from .files import VolumeService
 from .dockerconn import DockerHub, DockerClient
 from .models import Image, Repository, Process, Container, Port
-from .helper import ImageHelper
+from .helper import ImageHelper, ContainerHelper
 
 class StandardResultsSetPagination(PageNumberPagination):
     """
@@ -96,13 +96,19 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-class ContainerViewSet(viewsets.ModelViewSet):
+class ContainerViewSet(viewsets.ViewSet):
 
     queryset = Container.objects.all().order_by('-created')
     serializer_class = ContainerSerializer
     pagination_class = StandardResultsSetPagination
+    helper_class = ContainerHelper
+
+    def list(self, request):
+        '''list'''
+        return Response
 
     def create(self,request):
+        '''create'''
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = request.data
@@ -124,6 +130,48 @@ class ContainerViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.data)
 
+    def retrieve(self, request, pk=None):
+        '''retrieve'''
+        return Response()
+
+    def destroy(self, request, pk=None):
+        '''destroy'''
+        return Response()
+
+    @list_route()
+    def names(self,request):
+        '''names'''
+        return Response()
+
+    @detail_route()
+    def stat(self, request, pk=None):
+        '''stat'''
+        return Response()
+
+    @detail_route(methods=["POST"])
+    def run(self, request, pk=None):
+        '''run'''
+        return Response()
+
+    @detail_route(methods=["POST"])
+    def stop(self, request, pk=None):
+        '''stop'''
+        return Response()
+
+    @detail_route(methods=["POST"])
+    def pause(self, request, pk=None):
+        '''pause'''
+        return Response()
+
+    @detail_route(methods=["POST"])
+    def unpause(self, request, pk=None):
+        '''unpause'''
+        return Response()
+
+    @detail_route(methods=["POST"])
+    def restart(self, request, pk=None):
+        '''stat'''
+        return Response()
 
 class ImageViewSet(viewsets.ViewSet):
     '''ImageViewSet'''

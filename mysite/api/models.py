@@ -124,7 +124,31 @@ class Container(models.Model):
         if result:
             result = result[0:len(result)-1]
         return result
+    def display_binds(self):
+        result = ""
+        for bind in self.binds.all():
+            result += unicode(bind)
+            result += ","
+        if result:
+            result = result[0:len(result)-1]
+        return result
+    def display_links(self):
+        result = ""
+        for link in self.links.all():
+            result += unicode(link)
+            result += ","
+        if result:
+            result = result[0:len(result)-1]
+        return result
 
+    def display_environments(self):
+        result = ""
+        for env in self.environments.all():
+            result += unicode(env)
+            result += ","
+        if result:
+            result = result[0:len(result)-1]
+        return result
 # 容器连接情况
 class Link(models.Model):
     '''Link'''
@@ -164,7 +188,7 @@ class Port(models.Model):
         related_name="ports")
     port = models.IntegerField()
     external = models.BooleanField(default=False)
-
+    expose = models.CharField(default=None, blank=None, max_length=5)
 
     class Meta:
         '''Meta'''

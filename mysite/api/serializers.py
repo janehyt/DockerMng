@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 # from rest_framework.authtoken.models import Token
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from .models import Image, Repository, Process
+from .models import Image, Repository, Process, Container,Port
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -64,3 +64,25 @@ class ProcessSerializer(serializers.ModelSerializer):
         model = Process
         fields = ('pid', 'image', 'status', 'detail', 'proc')
     detail = serializers.DictField(source="get_detail", read_only=True)
+
+# class EnvSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Environment
+#         fields = ('id', 'key', 'value', 'container')
+
+class ContainerSerializer(serializers.ModelSerializer):
+    '''ContainerSerializer'''
+    class Meta:
+        model = Container
+        fields = ('id', 'name', 'user', 'image', 'command', 'restart',\
+            'created','updated', 'ports')
+    created = serializers.DateTimeField(read_only=True)
+    updated = serializers.DateTimeField(read_only=True)
+    ports = serializers.CharField(source="display_ports")
+    # environments = EnvSerializer
+
+    def create(self, validated_data):
+        '''create'''
+        print validated_data
+        return Container()
+

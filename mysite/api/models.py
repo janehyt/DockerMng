@@ -116,6 +116,15 @@ class Container(models.Model):
     def __unicode__(self):
         return self.name
 
+    def display_ports(self):
+        result = ""
+        for port in self.ports.all():
+            result += unicode(port)
+            result += ","
+        if result:
+            result = result[0:len(result)-1]
+        return result
+
 # 容器连接情况
 class Link(models.Model):
     '''Link'''

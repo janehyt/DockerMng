@@ -4,9 +4,10 @@ div(ng-controller="RepoListCtrl")
 	.wrapper-md
 		.panel
 			.panel-heading.bg-dark
-				.h2.text-lt 仓库列表
+				.h2.text-lt 镜像仓库
 				.wrapper
-					p.text-lt DockerHub镜像默认显示官方镜像，搜索可查看更多镜像
+					p.text-lt 已有镜像来源包括构建和拉取，我的仓库显示自己创建的仓库，可在其中构建镜像，DockerHub仓库内默认显示官方仓库，搜索可查看更多，可在其中拉取镜像
+					a.btn.btn-primary.btn-sm(ui-sref="app.newrepo") 创建仓库
 			.panel-body
 				tabset.tab-container
 					tab(select="loadImages()",active="tabs[0]")
@@ -64,10 +65,16 @@ div(ng-controller="RepoListCtrl")
 						tab-heading 我的仓库
 						.wrapper
 							form.m-b-md(ng-submit="loadRepos(1)",name="searchForm")
-								.input-group.col-sm-4
-									input.input-md.form-control(type="text",placeholder="搜索仓库",ng-model="repos.page.query")
-									span.input-group-btn
-										input.btn.btn-md.btn-default(type="submit",value="搜索")
+								.input-group
+									.col-sm-4
+										.input-group
+											input.input-md.form-control(type="text",placeholder="搜索仓库",ng-model="repos.page.query")
+											span.input-group-btn
+												input.btn.btn-md.btn-default(type="submit",value="搜索")
+									.pull-right
+										a.btn.btn-default(ui-sref="app.newrepo") 创建仓库
+
+								
 							.table-responsive
 								table.table.table-striped.b-t.b-light
 									thead
@@ -86,14 +93,8 @@ div(ng-controller="RepoListCtrl")
 											//- td {{item.description}}
 											td
 												.btn-group.dropdown(dropdown="")
-													button.btn.btn-default(type="button",ng-click="detail(item.name,item.namespace)") 查看详情
-													button.btn.btn-default(dropdown-toggle="")
-														span.caret
-													ul.dropdown-menu
-														li
-															a(ng-click="detail(item.name,item.namespace)") 查看详情
-														li
-															a(ng-click="build(item)") 在此构建镜像
+													button.btn.btn-default(type="button",ng-click="detail(item.name,item.namespace)") 查看或构建
+													
 								h3.text-primary.text-center(ng-if="!repos.results||repos.results.length==0") 暂无仓库
 				
 								.pull-right

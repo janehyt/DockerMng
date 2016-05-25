@@ -27,6 +27,7 @@ router.register(r'users', views.UserViewSet)
 router.register(r'volumes',views.VolumeViewSet,base_name="volume")
 router.register(r'repos',views.RepoViewSet,base_name="repo")
 router.register(r'images',views.ImageViewSet,base_name="image")
+router.register(r'containers', views.ContainerViewSet,base_name="container")
 
 urlpatterns = [
     url(r'^$',serve, 

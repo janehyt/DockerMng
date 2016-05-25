@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib import auth
 from django.http import StreamingHttpResponse
+from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -16,10 +17,10 @@ from rest_framework.permissions import AllowAny
 # from rest_framework.reverse import reverse
 from docker import errors
 from .serializers import UserSerializer, ImageSerializer,\
-RepoSerializer, ProcessSerializer
+RepoSerializer, ProcessSerializer, ContainerSerializer
 from .files import VolumeService
 from .dockerconn import DockerHub, DockerClient
-from .models import Image, Repository, Process
+from .models import Image, Repository, Process, Container, Port
 from .helper import ImageHelper
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -95,8 +96,36 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
+class ContainerViewSet(viewsets.ModelViewSet):
 
-class ImageViewSet(viewsets.ModelViewSet):
+    queryset = Container.objects.all().order_by('-created')
+    serializer_class = ContainerSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def create(self,request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = request.data
+        image = Image.objects.get(id=data["image"])
+        serializer.save()
+        # del data["user"]
+        # del data["image"]
+        # del data["csrfmiddlewaretoken"]
+        # try:
+        #     with transaction.atomic():
+        #         container = Container(**data)
+        #         container.image = image
+        #         container.user = request.user
+        #         port = Port(port=80)            
+        #         container.save()
+        #         container.ports.add(port,bulk=False)
+        # except Exception:
+        #     return Response({"detail":"创建失败"},status=400)
+        
+        return Response(serializer.data)
+
+
+class ImageViewSet(viewsets.ViewSet):
     '''ImageViewSet'''
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
@@ -110,10 +139,23 @@ class ImageViewSet(viewsets.ModelViewSet):
         queryset = Image.objects.filter(users=request.user,\
             repository__contains=query)
         data = pagination.paginate_queryset(queryset, request)
-        serializer = ImageSerializer(data, many=True,\
+        serializer = self.serializer_class(data, many=True,\
             context={'request': request})
         images = serializer.data
         return pagination.get_paginated_response(images)
+
+    def retrieve(self, request, pk=None):
+        data = get_object_or_404(self.queryset, pk=pk, users=request.user)
+        return Response(self.serializer_class(data).data)
+
+    def destroy(self, request, pk=None):
+        '''destroy'''
+        data = get_object_or_404(self.queryset, pk=pk, users=request.user)
+        data.users.remove(request.user)
+        if data.isbuild and data.repository.startswith(Repository.LOCAL+"/"):
+            response = self.helper_class(data).destroy()
+            return Response(response.get("data"), status= response.get("status"))        
+        return Response(status=204)
 
     @list_route(methods=['POST'])
     def pull(self, request):
@@ -127,9 +169,12 @@ class ImageViewSet(viewsets.ModelViewSet):
                 image.users.add(request.user)
                 image.save()
             if not image.isbuild:
-                status = self.helper_class(image).pull()
-                return Response(status)
-            return Response(self.serializer_class(image).data)
+                response = self.helper_class(image).pull()
+                if isinstance(response, Image):
+                    return Response(self.serializer_class(response).data)
+                return Response(response.get("data",""), status=response.get("status",404))
+            return Response({"detail":"所选镜像来源为本地仓库，不需要拉取"},\
+                status=400)
         else:
             return Response({"detail":"请提供repository和tag"}, status=400)
 
@@ -141,26 +186,42 @@ class ImageViewSet(viewsets.ModelViewSet):
         repository = data.get("repository", "")
         tag = data.get("tag", "")
         builddir = VolumeService(user, data.get("builddir", "")).get_path()
-        repository.split("/")
+        #检查表单数据是否合适
         if repository and tag and builddir and\
-        repository.find(Repository.LOCAL+"/") is 0:
-            response = Repository.objects.filter(namespace=Repository.LOCAL,\
+        repository.startswith(Repository.LOCAL+"/"):
+            res = Repository.objects.filter(namespace=Repository.LOCAL,\
                 name=repository.split("/")[1])
-            if len(response) is 1:
+            if len(res) is 1:
                 data["builddir"] = builddir
                 data["isbuild"] = True
                 data["status"] = Image.BUILDING
                 serializer = self.serializer_class(data=data)
+                #创建Image对象，成功后开始构建
                 if serializer.is_valid():
                     image = serializer.save()
                     image.users.add(user)
                     image.save()
-                    return Response(serializer.data)
+                    response = self.helper_class(image).build()
+                    if isinstance(response, Image):
+                        return Response(self.serializer_class(response).data)
+                    return Response(response.get("data", ""), status=response.get("status", 404))
                 else:
                     return Response("该仓库下已存在该标签构建的镜像", status=400)
             else:
                 pass
         return Response("请给出合适的repository、tag、path", status=400)
+    @detail_route(methods=['POST'])
+    def rebuild(self, request, pk=None):
+        '''rebuild'''
+        image = get_object_or_404(self.queryset, pk=pk, users=request.user)
+        #检查表单数据是否合适
+        if image.isbuild and image.repository.startswith(Repository.LOCAL+"/"):
+            response = self.helper_class(image).build()
+            if isinstance(response, Image):
+                return Response(self.serializer_class(response).data)
+            return Response(response.get("data", ""), status=response.get("status", 404))
+            
+        return Response("该镜像非本地构建", status=400)
 
     @detail_route()
     def process(self, request, pk=None):#pylint: disable=invalid-name
@@ -247,7 +308,7 @@ class RepoViewSet(viewsets.ViewSet):
 
         if namespace == Repository.LOCAL:
             queryset = Image.objects.filter(repository=namespace+"/"+pk,\
-                tag__contains=tag_name)
+                tag__contains=tag_name,users=request.user)
             pagination = self.pagination_class()
             data = pagination.paginate_queryset(queryset, request)
 
@@ -339,3 +400,4 @@ class VolumeViewSet(viewsets.ViewSet):
             files = self.service(request.user, path)
             return Response(status=files.unzip())
         return Response({"detail":"请提供path"}, status=400)
+

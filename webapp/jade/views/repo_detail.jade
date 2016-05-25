@@ -66,9 +66,9 @@ div(ng-controller="RepoDetailCtrl")
 												.btn-group.dropdown(dropdown="")
 													button.btn.btn-default(type="button",ng-click="publish(item)",ng-if="item.status=='EX'") 部署
 												.btn-group.dropdown(dropdown="")
-													button.btn.btn-default(type="button",ng-click="publish(item)",ng-if="item.status!='EX'") 重试构建
+													button.btn.btn-default(type="button",ng-click="rebuild(item.id)",ng-if="item.status!='EX'") 重试构建
 												.btn-group.dropdown(dropdown="")
-													button.btn.btn-danger(type="button",ng-click="publish(item)",ng-if="item.status!='BD'") 移除
+													button.btn.btn-danger(type="button",ng-click="delete(item)",ng-if="item.status!='BD'") 移除
 								h3.text-primary.text-center(ng-if="!tags.results||tags.results.length==0") 暂无镜像显示
 
 								.pull-right

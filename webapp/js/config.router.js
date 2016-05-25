@@ -89,7 +89,7 @@ angular.module('app')
                   }
               })
               .state('app.publish',{
-                  url:'/publish/:namespace/:name/:tag',
+                  url:'/publish/:id',
                   templateUrl:'app/views/application_create.html',
                   resolve: {
                       deps: ['$ocLazyLoad',
@@ -105,6 +105,22 @@ angular.module('app')
               .state('app.repo',{
                 url:'/repos/:namespace/:name?tab',
                 templateUrl: 'app/views/repo_detail.html',
+                resolve: {
+                      deps: ['$ocLazyLoad',
+                        function( $ocLazyLoad){
+                          return $ocLazyLoad.load('toaster');
+                      }]
+                  }
+              })
+              .state('app.newrepo',{
+                url:'/newrepo',
+                templateUrl: 'app/views/repo_create.html',
+                resolve: {
+                      deps: ['$ocLazyLoad',
+                        function( $ocLazyLoad){
+                          return $ocLazyLoad.load('toaster');
+                      }]
+                  }
               })
               .state('app.file', {
                   url: '/file',

@@ -1,6 +1,6 @@
 div(ng-controller="ApplicationCreateCtrl")
 	.bg-light.lter.b-b.wrapper-md
-		a(ui-sref="app.repo({namespace:$state.params.namespace,name:$state.params.name})").m-n.font-thin.h3
+		a(ui-sref="app.repos").m-n.font-thin.h3
 			i.fa.fa-arrow-left
 			|  {{title}}
 		//- h1.m-n.font-thin.h3 {{title}}
@@ -11,11 +11,11 @@ div(ng-controller="ApplicationCreateCtrl")
 				.h2.text-lt 创建应用
 				.row.wrapper
 					.col-sm-6.text-lt 所属镜像
-						a(ui-sref="app.repo({namespace:$state.params.namespace,name:$state.params.name})")
-							span.label.label-primary {{title}}
+						a(ui-sref="app.repo(params)")
+							span.label.label-primary {{params.namespace|filterOfficial}} {{params.name}}
 						span
 							i.fa.fa-tag.fa-fw.m-r-xs
-							|{{$state.params.tag}}
+							|{{tag}}
 					//- .col-sm-2.text-lt 拉取数: {{data.pull_count|largeNumber}}
 				span.wrapper
 					a.btn.btn-primary.btn-sm(ui-sref="app.repos") 重选镜像
@@ -128,16 +128,41 @@ div(ng-controller="ApplicationCreateCtrl")
 							tabset.tab-container
 								tab
 									tab-heading 路径绑定
-									span.help-block 主机路径须以'/'开头则为绝对路径，否则默认为容器目录的相对路径(容器目录自动生成)
+									span.help-block 主机路径是导航的相对目录，为空则挂载导航显示的目录，否则会在容器创建时创建相应目录，容器路径必须为绝对路径。
+									ul.breadcrumb.bg-white.b-a
+										li(ng-repeat="b in files.bread")
+											a(ng-click="loadFiles(b.path)",ng-class="(files.bread.length==$index+1)?'active':''")
+												i(ng-if="$index==0").fa.fa-home
+												| {{b.name}}
 									.input-group
 										input.form-control(type="text",ng-model="volume.host",placeholder="请输入主机路径")
 										span.input-group-addon :
 										input.form-control(type="text",ng-model="volume.path",placeholder="请输入容器路径(必须为绝对路径)")
 										span.input-group-btn
 											button.btn.btn-default(type="button",ng-disabled="volume.invalidPath()",ng-click="volume.add(volume.host,volume.path)") 添加
+									button.btn.btn-default(ng-click="isCollapsed=!isCollapsed",type="button") {{isCollapsed?'展开':'隐藏'}}								
+									
+									.table-responsive(collapse="isCollapsed")
+												
+										table.table.table-striped.b-t.b-light
+											thead
+												tr
+													th 名字
+													th 类型
+													th 操作
+											tbody
+												tr(ng-repeat="item in files.list")
+													td
+														strong {{item.name}}
+													td {{item.isfile?'文件':'文件夹'}}
+
+													td(nowrap="")
+
+														.btn-group.dropdown(dropdown="")
+															button.btn.btn-default(type="button",ng-if="!item.isfile",ng-click="loadFiles(item.path)") 打开
 								tab
-									tab-heading 文件绑定
-									span.help-block 仅可选择已上传文件，若为zip，则自动解压到容器目录下再挂载，否则拷贝到容器目录下挂载
+									tab-heading 已有Volume
+									span.help-block 只有已挂载过的目录可选
 									.input-group
 										select.form-control(type="text",ng-model="volume.select")
 											option(ng-repeat="o in volume.options") {{o.name}}

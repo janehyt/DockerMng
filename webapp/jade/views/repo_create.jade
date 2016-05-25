@@ -1,0 +1,31 @@
+div(ng-controller="RepoCreateCtrl")
+	.bg-light.lter.b-b.wrapper-md
+		a(ui-sref="app.repos()").m-n.font-thin.h3
+			i.fa.fa-arrow-left
+			|  {{title}}
+		//- h1.m-n.font-thin.h3 {{title}}
+	.wrapper-md
+		
+		.panel
+			.panel-heading.bg-dark
+				.h2.text-lt 创建仓库
+				.row.wrapper
+					.col-sm-6.text-lt 命名空间
+						span.label.label-info {{repo.namespace}}
+					//- .col-sm-2.text-lt 拉取数: {{data.pull_count|largeNumber}}
+				
+			.panel-body
+				form.form-horizontal.form-validation(name="CreateForm")
+					.form-group
+						label.col-sm-2.control-label 仓库名称
+						.col-sm-8
+							input.form-control(type="text",required="true",ng-model="repo.name",placeholder="请输入应用名称，不能为空")
+						.text-danger.help-block *
+					.form-group
+						label.col-sm-2.control-label 详细描述
+						.col-sm-8
+							textarea.form-control(type="text",ng-model="repo.description",placeholder="支持markdown格式",rows="8")
+						
+			footer.panel-footer.text-right.bg-light.lter
+				button.btn.btn-default(ng-disabled="CreateForm.$invalid",ng-click="confirm()") 创建仓库
+				

@@ -63,6 +63,40 @@ app.service('Image',['$http','BASE_URL','$q',
 				return deferred.promise;
 			}
 
+			this.rebuild=function(id){
+				
+				var deferred = $q.defer();
+				$http.post(_url+id+"/rebuild/").then(
+					function(response){
+						deferred.resolve(response.data);
+					},function(x){
+						deferred.reject(x.data);
+					})
+				return deferred.promise;
+			}
+
+			this.remove=function(id){
+				
+				var deferred = $q.defer();
+				$http.delete(_url+id+"/").then(
+					function(response){
+						deferred.resolve(response.data);
+					},function(x){
+						deferred.reject(x.data);
+					})
+				return deferred.promise;
+			}
+			this.load = function(id){
+				var deferred = $q.defer();
+				$http.get(_url+id+"/").then(
+					function(response){
+						deferred.resolve(response.data);
+					},function(x){
+						deferred.reject(x.data);
+					})
+				return deferred.promise;
+			}
+
 
 
 
@@ -107,6 +141,17 @@ app.service('Image',['$http','BASE_URL','$q',
 			}
 			this.getTags=function(){
 				return _tags
+			}
+
+			this.create=function(data){
+				var deferred = $q.defer();
+				$http.post(_url,data).then(
+					function(response){
+						deferred.resolve(response.data);
+					},function(x){
+						deferred.reject(x.data);
+					});
+				return deferred.promise;
 			}
 
 			this.list=function(){

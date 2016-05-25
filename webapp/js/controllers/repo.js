@@ -49,12 +49,7 @@ app.controller('RepoListCtrl',['$scope','$state','Image','Repo','filterOfficialF
 	}
 
 	$scope.publish=function(item){
-		console.info(item);
-		// if(name.indexOf("/")!=-1){
-		// 	var list = name.split("/");
-		// 	$state.go('app.publish',{name:list[1],namespace:list[0],tag:"latest"});
-		// }else
-		// 	$state.go('app.publish',{name:name,namespace:"library",tag:"latest"});
+		$state.go('app.publish',{id:item.id})
 	}
 	$scope.pull=function(name,namespace,tag){
 		var repository = filterOfficialFilter(namespace)+name;
@@ -84,8 +79,9 @@ app.controller('RepoListCtrl',['$scope','$state','Image','Repo','filterOfficialF
 	
 
 }]);
-app.controller('RepoDetailCtrl',['$scope','$state','$sce','filterOfficialFilter','Repo','Image','File',
-	function($scope,$state,$sce,filterOfficial,Repo,Image,File){
+app.controller('RepoDetailCtrl',['$scope','$state','$sce',
+	'filterOfficialFilter','Repo','Image','File','$modal','toaster',
+	function($scope,$state,$sce,filterOfficial,Repo,Image,File,$modal,toaster){
 
 
 	$scope.loadData=function(){	
@@ -112,14 +108,14 @@ app.controller('RepoDetailCtrl',['$scope','$state','$sce','filterOfficialFilter'
 	}
 	$scope.loadFiles = function(path){
 		$scope.tab=2;
-      File.list(path).then(function(){
-        // console.info(File.getFiles());
-        $scope.files = File.getFiles();
-        if(path){
-          $scope.path = path;
-        }
-      });
-    }
+	  File.list(path).then(function(){
+		// console.info(File.getFiles());
+		$scope.files = File.getFiles();
+		if(path){
+		  $scope.path = path;
+		}
+	  });
+	}
 
 	
 	$scope.loadHtmlData=function(data){
@@ -127,31 +123,74 @@ app.controller('RepoDetailCtrl',['$scope','$state','$sce','filterOfficialFilter'
 	}
 	$scope.pull=function(data){
 		var repository = $scope.name;
+		toaster.pop("warning","已开始拉取，可在已有镜像中查看状态。")
 		// console.info(repository);
 		Image.pull({repository:repository,tag:data}).then(
 			function(response){
 				console.info(response);
-
+				if($state.current.name=="app.repo"){
+					toaster.pop("success","拉取成功");
+				}
 			},function(x){
 				console.info(x);
+				if($state.current.name=="app.repo"){
+					toaster.pop("error",x);
+				}
 			});
 		
 	}
-	$scope.build=function(){
-		console.info("构建");
-	}
 	$scope.publish = function(data){
-		console.info("部署");
+		
 	}
 	$scope.create=function(tag){
 		var repository = $scope.name;
+		toaster.pop("warning","已开始构建，可在已有镜像中查看状态。")
 		Image.build({repository:repository,tag:tag,builddir:$scope.path}).then(
+			function(response){
+				console.info(response,$state.current);
+				if($state.current.name=="app.repo"){
+					toaster.pop("success","构建成功");
+				}
+			},function(x){
+				console.info(x);
+				if($state.current.name=="app.repo"){
+					toaster.pop("error",x);
+				}
+			});
+	}
+	$scope.rebuild=function(id){
+		console.info(response,$state.current);
+		Image.rebuild(id).then(
 			function(response){
 				console.info(response);
 
 			},function(x){
 				console.info(x);
 			});
+	}
+	$scope.delete=function(item){
+		var modalIns = $modal.open({
+			templateUrl: 'app/views/template/delete.html',
+			controller: 'ModalDelCtrl',
+			resolve:{
+				name:function(){
+				return item.repository;
+			  }
+			}
+		});
+		modalIns.result.then(function(){
+			Image.remove(item.id).then(function(){
+				toaster.pop("success","已成功移除所选版本");
+				$scope.loadTags();
+			},function(x){
+				console.info(x);
+				toaster.pop("error",x);
+			})
+		},function(){
+			console.info("dismiss");
+		})
+
+		
 	}
 
 	$scope.init=function(){
@@ -176,3 +215,35 @@ app.controller('RepoDetailCtrl',['$scope','$state','$sce','filterOfficialFilter'
 	
 
 }]);
+
+app.controller('RepoCreateCtrl',['$scope','$state','toaster','$modal','Repo',
+	function($scope,$state,toaster,$modal,Repo){
+
+		$scope.init=function(){
+			$scope.title="镜像仓库";
+			$scope.repo={namespace:"local"}
+		};
+
+		$scope.confirm=function(){
+			var modalIns = $modal.open({
+				templateUrl: 'app/views/template/confirm.html',
+				controller: 'ModalConCtrl'
+			});
+			modalIns.result.then(function(){
+				Repo.create($scope.repo).then(
+					function(data){
+						$state.go("app.repo",data);
+					},function(x){
+						toaster.pop("error",x);
+					});
+				
+			},function(){
+				console.info("dismiss");
+			})
+
+		}
+
+		$scope.init();
+
+	}
+]);

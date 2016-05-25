@@ -130,15 +130,40 @@ app.controller('ApplicationsListCtrl',['$scope','$http','$state','$modal','toast
 	
 
 }]);
-app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficialFilter','toaster','$modal',
-	function($scope,$http,$state,filterOfficial,toaster,$modal){
+app.controller('ApplicationCreateCtrl',['$scope','$state','filterOfficialFilter',
+	'toaster','$modal','Image','File',
+	function($scope,$state,filterOfficial,toaster,$modal,Image,File){
 		$scope.init=function(){
-			$scope.title=filterOfficial($state.params.namespace)+
-				$state.params.name;
-			$scope.container={image:$scope.title+":"+$state.params.tag}
-			$scope.loadLinks();
-			$scope.loadFiles();
-		};
+			$scope.container={};
+			$scope.title = "镜像仓库";
+			$scope.path=""
+			Image.load($state.params.id).then(
+				function(data){
+					// console.info(data);
+					$scope.container.image=data.id;
+					if(data.repository.indexOf("/")!=-1){
+						var repos = data.repository.split("/");
+						$scope.params = {namespace:repos[0],name:repo[1]}
+					}else{
+						$scope.params = {namespace:"library",name:data.repository}
+					}
+					// console.info($scope.params);
+					$scope.tag = data.tag;
+				},function(x){
+					console.info(x);
+				});
+			$scope.loadFiles($scope.path);
+
+		}
+		$scope.loadFiles = function(path){
+	      File.list(path).then(function(){
+	        // console.info(File.getFiles());
+	        $scope.files = File.getFiles();
+	        if(path){
+	          $scope.path = path;
+	        }
+	      });
+	    }
 		$scope.loadLinks=function(){
 			$http.get("api/containers/names").then(
 				function(response){
@@ -151,17 +176,7 @@ app.controller('ApplicationCreateCtrl',['$scope','$http','$state','filterOfficia
 					console.info(x);
 				})
 		}
-		$scope.loadFiles=function(){
-			$http.get("api/files").then(
-				function(response){
-					if(response.data.length>0){
-						$scope.volume.options=response.data;
-						$scope.volume.select=$scope.volume.options[0].name;
-					}
-				},function(x){
-					console.info(x);
-				});
-		}
+		
 
 		$scope.confirm=function(){
 			var modalIns = $modal.open({

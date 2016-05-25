@@ -5,30 +5,30 @@ import requests
 from docker import Client
 from mysite import settings as settings
 
-class Singleton(type):
-    '''Singleton'''
-    def __init__(cls, name, bases, dic):
-        super(Singleton, cls).__init__(name, bases, dic)
-        cls._instance = None
-    def __call__(cls, *args, **kw):
-        if cls._instance is None:
-            cls._instance = super(Singleton, cls).__call__(*args, **kw)
-        return cls._instance
+# class Singleton(type):
+#     '''Singleton'''
+#     def __init__(cls, name, bases, dic):
+#         super(Singleton, cls).__init__(name, bases, dic)
+#         cls._instance = None
+#     def __call__(cls, *args, **kw):
+#         if cls._instance is None:
+#             cls._instance = super(Singleton, cls).__call__(*args, **kw)
+#         return cls._instance
 
 class DockerClient(object):
     '''DockerClient'''
     # __metaclass__ = Singleton
     def __init__(self, url=settings.DOCKER_CLIENT):
-        self.url = url
-        self.client = Client(base_url=url)
+        self.__url = url
+        self.__client = Client(base_url=url)
 
     def get_client(self):
         '''get_client'''
-        return self.client
+        return self.__client
 
 class DockerHub(object):
     '''DockerHub'''
-    __metaclass__ = Singleton
+    # __metaclass__ = Singleton
     __host = "hub.docker.com"
     # _base_url= "https://"+_host+"/v2/repostories"
     __offical = "library"

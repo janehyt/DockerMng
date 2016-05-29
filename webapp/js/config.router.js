@@ -101,6 +101,12 @@ angular.module('app')
               .state('app.repos', {
                   url: '/repos?page&page_size&tab',
                   templateUrl: 'app/views/repo_list.html',
+                  resolve: {
+                      deps: ['$ocLazyLoad',
+                        function( $ocLazyLoad){
+                          return $ocLazyLoad.load('toaster');
+                      }]
+                  }
               })
               .state('app.repo',{
                 url:'/repos/:namespace/:name?tab',

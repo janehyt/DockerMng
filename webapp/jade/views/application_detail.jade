@@ -14,7 +14,7 @@ div(ng-controller="ApplicationDetailCtrl")
 					.col-sm-4.text-lt 配置创建于: 
 						span.label.label-info {{data.created|time}}
 					.col-sm-4.text-lt 状态: 
-						span.label(ng-class="stateClass(data.status.detail)") {{data.status.detail}}
+						span.label(ng-class="data.status | stateClass") {{data.status}}
 				.row.wrapper(ng-if="data.status.code==2")
 					.col-sm-6
 						.progress.bglight.dker
@@ -47,7 +47,7 @@ div(ng-controller="ApplicationDetailCtrl")
 								.col-sm-8
 									p.form-control-static
 										span.label.label-info(ng-repeat="c in data.config.command") {{c}}
-										strong.text-danger(ng-if="empty(data.config.command)") 未自定义启动命令
+										strong.text-danger(ng-if="empty(data.config.command)") 未配置启动命令
 							.form-group
 								label.col-sm-2.control-label 自动重启
 								.col-sm-8
@@ -66,17 +66,17 @@ div(ng-controller="ApplicationDetailCtrl")
 										table.table
 											thead
 												th 容器端口
-												th 外部访问
+												th 外部访问端口
 											tbody
 												tr(ng-repeat="p in data.config.ports")
 													td {{p.key}}/tcp
 													td
-														span.text-success(ng-if="p.value")
-															i.glyphicon.glyphicon-ok
+														span(ng-if="p.value")
+															| {{p.value}}
 														span.text-danger(ng-if="!p.value")
 															i.glyphicon.glyphicon-remove
 										p.text-center.text-danger(ng-if="empty(data.config.ports)")
-											strong 未自定义开放端口
+											strong 未配置开放端口
 							.line.b-b.line-lg.pull-in
 							.form-group
 								label.col-sm-2.control-label 环境变量
@@ -91,15 +91,15 @@ div(ng-controller="ApplicationDetailCtrl")
 													td {{e.key}}
 													td {{e.value}}
 										p.text-center.text-danger(ng-if="empty(data.config.envs)")
-											strong 未自定义环境变量
+											strong 未配置环境变量
 							.line.b-b.line-lg.pull-in
 							.form-group
-								label.col-sm-2.control-label 应用绑定
+								label.col-sm-2.control-label 容器绑定
 								.col-sm-8
 									.table-responsive
 										table.table
 											thead
-												th 应用名称
+												th 容器名称
 												th 绑定别名
 											tbody
 												tr(ng-repeat="l in data.config.links")
@@ -108,7 +108,7 @@ div(ng-controller="ApplicationDetailCtrl")
 															span.label.label-primary {{l.value}}
 													td {{l.key}}
 										p.text-center.text-danger(ng-if="empty(data.config.links)")
-											strong 未自定义应用绑定
+											strong 未配置容器绑定
 							.line.b-b.line-lg.pull-in
 							.form-group
 								label.col-sm-2.control-label Volume挂载
@@ -120,12 +120,11 @@ div(ng-controller="ApplicationDetailCtrl")
 												th 主机路径
 												th 容器路径
 											tbody
-												tr(ng-repeat="v in data.config.volumes")
+												tr(ng-repeat="v in data.config.binds")
 													td {{v.value}}
 													td {{v.key}}
-													td(ng-show="v.manage")
-														button.btn.btn-default.btn-sm(ng-click="openTab(v.value)") 管理
-										p.text-center.text-danger(ng-if="empty(data.config.volumes)")
+													
+										p.text-center.text-danger(ng-if="empty(data.config.binds)")
 											strong 未自定义Volume挂载
 					tab(ng-if="data.inspect",select="setStat(false)")
 						tab-heading 实例信息
@@ -183,12 +182,12 @@ div(ng-controller="ApplicationDetailCtrl")
 							
 							.line.b-b.line-lg.pull-in
 							.form-group
-								label.col-sm-2.control-label 应用绑定
+								label.col-sm-2.control-label 容器绑定
 								.col-sm-8
 									.table-responsive
 										table.table
 											thead
-												th 应用名称
+												th 容器名称
 												th 绑定别名
 											tbody
 												tr(ng-repeat="l in inspect.links")
@@ -197,7 +196,7 @@ div(ng-controller="ApplicationDetailCtrl")
 															span.label.label-primary {{l.value}}
 													td {{l.key}}
 										p.text-center.text-danger(ng-if="empty(inspect.links)")
-											strong 没有应用绑定
+											strong 没有容器绑定
 							.line.b-b.line-lg.pull-in
 							.form-group
 								label.col-sm-2.control-label Volume挂载
@@ -212,8 +211,6 @@ div(ng-controller="ApplicationDetailCtrl")
 												tr(ng-repeat="v in inspect.volumes")
 													td {{v.value}}
 													td {{v.key}}
-													td(ng-show="v.manage")
-														button.btn.btn-default.btn-sm(ng-click="openTab(v.value)") 管理
 										p.text-center.text-danger(ng-if="empty(inspect.volumes)")
 											strong 没有Volume挂载
 							.form-group
@@ -221,7 +218,7 @@ div(ng-controller="ApplicationDetailCtrl")
 								.col-sm-8
 									p.form-control-static
 										span.label.label-info {{inspect.ip}}
-					tab(ng-if="data.status.detail=='running'",select="setStat(true)")
+					tab(ng-if="data.status=='running'",select="setStat(true)")
 						tab-heading 监控信息
 						.wrapper
 							.table-responsive

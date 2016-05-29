@@ -1,26 +1,29 @@
 '''views'''
 # -*- coding: UTF-8 -*-
-import json
+# import json
 # from collections import OrderedDict
 import markdown
+import calendar
+import datetime
+from collections import OrderedDict
 from django.shortcuts import get_object_or_404
 # Create your views here.
 from django.contrib.auth.models import User
 from django.contrib import auth
 from django.http import StreamingHttpResponse
-from django.db import transaction
+from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.permissions import AllowAny
-# from rest_framework.reverse import reverse
+from rest_framework.reverse import reverse
 from docker import errors
 from .serializers import UserSerializer, ImageSerializer,\
 RepoSerializer, ProcessSerializer, ContainerSerializer
 from .files import VolumeService
 from .dockerconn import DockerHub, DockerClient
-from .models import Image, Repository, Process, Container, Port
+from .models import Image, Repository, Process, Container,Volume
 from .helper import ImageHelper, ContainerHelper
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -96,6 +99,62 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
+    @list_route()
+    def overview(self,request):
+        user = request.user
+        files = VolumeService(user)
+        result={
+            "images":user.images.all().count(),\
+            "containers":{"total":user.containers.count(),\
+            "pie":{"running":0, "error":0, "exited":0, "none":user.containers.count()}},\
+            "files_size":files.get_size(),\
+            "user":str(user)\
+        }
+
+        date = user.dates.all().order_by('date')
+        
+        result["containers"]["date"] = self.__resloveDate(date)
+
+        cli = DockerClient().get_client()
+        containers = user.containers.all()
+        try:
+            docker=cli.version()
+        except errors.APIError:
+            pass
+        else:
+            result["docker"] = {"version":docker["Version"], "api":docker["ApiVersion"]}
+
+        for c in containers:
+            try:
+                sta = cli.inspect_container(c.name)["State"]["Status"]
+            except errors.NotFound:
+                pass
+            else:
+                result["containers"]["pie"]["none"] -= 1
+                if sta in result["containers"]["pie"]:
+                    result["containers"]["pie"][sta] += 1
+
+        return Response(result)
+
+    def __resloveDate(self,date):
+        container_date = []
+        today = datetime.date.today()
+        min_date = max_date = today
+        # print today.year,today.month,today.day
+        if len(date) > 0:
+            min_date = date[0].date
+        index = 0
+        while min_date <= max_date:
+            count = 0
+            for i in range(index, len(date)):
+                if min_date == date[i].date:
+                    count = date[i].count
+                    index += 1
+                break
+            container_date.append([calendar.timegm(min_date.timetuple())*1000, count])
+            min_date += datetime.timedelta(1)
+        return container_date
+
 class ContainerViewSet(viewsets.ViewSet):
 
     queryset = Container.objects.all().order_by('-created')
@@ -104,74 +163,152 @@ class ContainerViewSet(viewsets.ViewSet):
     helper_class = ContainerHelper
 
     def list(self, request):
-        '''list'''
-        return Response
+        pagination = self.pagination_class()
+        query = request.query_params.get("query", "")
+        queryset = Container.objects.filter(user=request.user, name__contains=query)
+        data = pagination.paginate_queryset(queryset, request)
+
+        serializer = ContainerSerializer(data, many=True, context={'request': request})
+        containers = serializer.data
+        cli = DockerClient().get_client()
+        for container in containers:
+            container["image"] = unicode(Image.objects.get(id=container["image"]))
+            try:
+                c = cli.inspect_container(container["name"])["State"]["Status"]
+                container["status"]= c
+            except errors.NotFound:
+                container["status"] = "none"
+
+            container["actions"] = self.__actions(container["status"],\
+                container["id"],request)
+        return pagination.get_paginated_response(containers)
 
     def create(self,request):
         '''create'''
+        data = request.data
+        print data
+        data['user'] = request.user.id
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = request.data
-        image = Image.objects.get(id=data["image"])
-        serializer.save()
-        # del data["user"]
-        # del data["image"]
-        # del data["csrfmiddlewaretoken"]
         # try:
-        #     with transaction.atomic():
-        #         container = Container(**data)
-        #         container.image = image
-        #         container.user = request.user
-        #         port = Port(port=80)            
-        #         container.save()
-        #         container.ports.add(port,bulk=False)
-        # except Exception:
-        #     return Response({"detail":"创建失败"},status=400)
+        result = serializer.save()
+        helper = self.helper_class(result)
+        helper.run()
+        return Response(self.serializer_class(result).data)
+        # except Exception,e:
+        #     return Response({"detail":"创建失败,请检查数据"},status=400)
         
-        return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-        '''retrieve'''
-        return Response()
+        data = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        helper = self.helper_class(data)
+        result = helper.detail()
+        # result["image"] = unicode(Image.objects.get(id=result["image"]))
+        if result["status"] == 200:
+            inspect = result["data"]["inspect"]
+            status = inspect["State"]["Status"] if inspect else "none"
+            result["data"]["actions"] = self.__actions(status, pk, request)
+        return Response(**result)
+
 
     def destroy(self, request, pk=None):
-        '''destroy'''
-        return Response()
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        helper = self.helper_class(container)
+
+        return Response(**helper.destroy())
 
     @list_route()
-    def names(self,request):
-        '''names'''
-        return Response()
+    def options(self,request):
+        data={"links":[],"binds":[]}
+        links = Container.objects.filter(user=request.user)
+        for link in links:
+            data["links"].append(link.name)
+        binds = Volume.objects.filter(Q(user=request.user)|Q(private=False))
+        for bind in binds:
+            if bind.private:
+                data["binds"].append(bind.name)
+            else:
+                data["binds"].append(bind.path)
+        return Response(data)
+
 
     @detail_route()
     def stat(self, request, pk=None):
-        '''stat'''
-        return Response()
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        helper = self.helper_class(container)
+
+        return Response(**helper.stat())
 
     @detail_route(methods=["POST"])
     def run(self, request, pk=None):
-        '''run'''
-        return Response()
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        helper = self.helper_class(container)
+
+        return Response(**helper.run())
 
     @detail_route(methods=["POST"])
     def stop(self, request, pk=None):
-        '''stop'''
-        return Response()
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        helper = self.helper_class(container)
+
+        return Response(**helper.stop())
 
     @detail_route(methods=["POST"])
     def pause(self, request, pk=None):
-        '''pause'''
-        return Response()
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        helper = self.helper_class(container)
+
+        return Response(**helper.pause())
 
     @detail_route(methods=["POST"])
     def unpause(self, request, pk=None):
-        '''unpause'''
-        return Response()
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        helper = self.helper_class(container)
+
+        return Response(**helper.unpause())
 
     @detail_route(methods=["POST"])
     def restart(self, request, pk=None):
-        '''stat'''
-        return Response()
+        container = get_object_or_404(self.queryset, pk=pk,user=request.user)
+        helper = self.helper_class(container)
+
+        return Response(**helper.restart())
+
+
+    def __actions(self, status, pk=None, request=None):
+        actions = OrderedDict({"detail":{\
+            "name":"detail",\
+            "url": reverse("container-detail", args=[pk], request=request)}})
+        action_delete = {"name":"delete",\
+            "url": reverse("container-detail", args=[pk], request=request)}
+
+        if status == "running":
+            actions["stop"] = {"name":"stop",\
+                "url":reverse("container-stop", args=[pk], request=request)}
+            actions["restart"] = {"name":"restart",\
+                "url": reverse("container-restart", args=[pk], request=request)}
+            actions["pause"] = {"name":"pause",\
+                "url": reverse("container-pause", args=[pk], request=request)}
+
+        elif status == "paused":
+            actions["unpause"] = {"name":"unpause",\
+                "url": reverse("container-unpause", args=[pk], request=request)}
+        elif status == "exited":
+            actions["start"] = {"name":"start",\
+                "url": reverse("container-run", args=[pk], request=request)}
+            actions["delete"] = action_delete
+        elif status == "none":
+            actions["start"] = {"name":"create",\
+                "url": reverse("container-run", args=[pk], request=request)}
+            actions["delete"] = action_delete
+        elif status == "restarting":
+            actions["stop"] = {"name":"stop",\
+                "url": reverse("container-stop", args=[pk], request=request)}
+            actions["delete"] = action_delete
+        else:#出错
+            actions["delete"] = action_delete
+
+        return actions
 
 class ImageViewSet(viewsets.ViewSet):
     '''ImageViewSet'''
@@ -199,11 +336,14 @@ class ImageViewSet(viewsets.ViewSet):
     def destroy(self, request, pk=None):
         '''destroy'''
         data = get_object_or_404(self.queryset, pk=pk, users=request.user)
-        data.users.remove(request.user)
-        if data.isbuild and data.repository.startswith(Repository.LOCAL+"/"):
-            response = self.helper_class(data).destroy()
-            return Response(response.get("data"), status= response.get("status"))        
-        return Response(status=204)
+        if Container.objects.filter(image=data).count() is 0:
+            data.users.remove(request.user)
+            if data.isbuild and data.repository.startswith(Repository.LOCAL+"/"):
+                response = self.helper_class(data).destroy()
+                return Response(response.get("data"), status= response.get("status"))        
+            return Response(status=204)
+        else:
+            return Response({"detail":"请先删除使用该镜像创建的容器"},status = 400)
 
     @list_route(methods=['POST'])
     def pull(self, request):
@@ -348,6 +488,17 @@ class RepoViewSet(viewsets.ViewSet):
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         return Response(self.serializer_class(serializer.save()).data)
+
+    def destroy(self,request,pk=None):
+        '''destroy'''
+        data = get_object_or_404(self.queryset, pk=pk, user=request.user)
+        serializer = self.serializer_class(data)
+        if serializer.data["tag_count"] is 0:
+            data.delete()
+            return Response("删除成功",status=200)
+        else:
+            return Response({"detail":"请先删除仓库内构建的镜像"},status=400)
+
     @detail_route()
     def tags(self, request, pk=None):#pylint: disable=invalid-name
         '''tags'''
@@ -448,4 +599,3 @@ class VolumeViewSet(viewsets.ViewSet):
             files = self.service(request.user, path)
             return Response(status=files.unzip())
         return Response({"detail":"请提供path"}, status=400)
-

@@ -1,24 +1,20 @@
-app.controller('DashboardCtrl',['$scope','$http','uiLoad','JQ_CONFIG',
-	function($scope,$http,uiLoad,JQ_CONFIG){
+app.controller('DashboardCtrl',['$scope','uiLoad','JQ_CONFIG','User',
+	function($scope,uiLoad,JQ_CONFIG,User){
 
-		$scope.loadData=function(){
-			$http.get("api/users/overview/").then(
-				function(response){
-					// console.info(response.data);
-					$scope.data=response.data;
-					// var date=$scope.data.containers.date;
+		$scope.init=function(){
+			$scope.title="控制面板";
+			$scope.data={containers:{date:[]}};
+			User.overview().then(
+				function(data){
+					$scope.data=data;
 					$scope.drawDateContainer($scope.data.containers.date);
 					$scope.drawPie($scope.data.containers.pie);
-					// console.info($scope.getString($scope.options));
-				},function(x){
-					console.info(x);
-				}
-			)
+				},
+				function(x){
+					console.info(x)
+				});
 		}
-		$scope.title="控制面板";
-		$scope.data={containers:{date:[]}};
-
-		$scope.d = [[1,6.5],[2,6.5],[3,7],[4,8],[5,7.5],[6,7],[7,6.8],[8,7],[9,7.2],[10,7],[11,6.8],[12,7]];
+		
 
 		
 		$scope.drawDateContainer=function(data){			
@@ -86,7 +82,7 @@ app.controller('DashboardCtrl',['$scope','$http','uiLoad','JQ_CONFIG',
 		]
 
 		uiLoad.load(JQ_CONFIG["plot"]).then(function(){
-			// $scope.loadData();
+			$scope.init();
 		});
 		
 }]);

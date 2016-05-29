@@ -39,7 +39,21 @@ div(ng-controller="RepoListCtrl")
 											td {{item.isbuild?'构建':'拉取'}}
 											td
 												.btn-group.dropdown(dropdown="")
-													button.btn.btn-default(type="button",ng-click="publish(item)",ng-if="item.status=='EX'") 部署
+
+													button.btn.btn-default(type="button",ng-click="repoDetail(item.repository)") 查看仓库信息
+													button.btn.btn-default(dropdown-toggle="")
+														span.caret
+													ul.dropdown-menu
+														li
+															a(ng-click="repoDetail(item.repository)") 查看仓库信息
+														li
+															a(ng-click="publish(item)",ng-if="item.status=='EX'") 基于该镜像部署
+														
+														//- li
+														//- 	a(ng-click="repull(item)",ng-if="!item.isbuild") 重新拉取
+														li
+															a(ng-click="deleteImage(item)",ng-if="item.status=='EX'") 删除镜像
+
 								h3.text-primary.text-center(ng-if="!images.results||images.results.length==0") 暂无镜像显示
 				
 								.pull-right
@@ -93,7 +107,14 @@ div(ng-controller="RepoListCtrl")
 											//- td {{item.description}}
 											td
 												.btn-group.dropdown(dropdown="")
-													button.btn.btn-default(type="button",ng-click="detail(item.name,item.namespace)") 查看或构建
+													button.btn.btn-default(type="button",ng-click="detail(item.name,item.namespace)") 查看详情
+													button.btn.btn-default(dropdown-toggle="")
+														span.caret
+													ul.dropdown-menu
+														li
+															a(ng-click="detail(item.name,item.namespace)") 查看详情
+														li
+															a(ng-click="deleteRepo(item)") 删除仓库
 													
 								h3.text-primary.text-center(ng-if="!repos.results||repos.results.length==0") 暂无仓库
 				

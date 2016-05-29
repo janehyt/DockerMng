@@ -4,29 +4,25 @@ div(ng-controller="ApplicationsListCtrl")
 	.wrapper-md
 		.panel
 			.panel-heading.bg-dark
-				.h2.text-lt 应用列表
+				.h2.text-lt 容器列表
 				.wrapper
-					p.text-lt 列表显示所有已配置的应用，查看详情可以进一步操作
-					p.text-lt 注：已有image的镜像创建较快，否则需要等待镜像拉取后创建，耗时较多
+					p.text-lt 列表显示所有已配置的容器，查看详情可以进一步操作
 			.panel-body
-				form.m-b-md(ng-submit="search(query)",name="searchForm")
+				form.m-b-md(ng-submit="loadData(1)",name="searchForm")
 					
 					.input-group
 						.col-sm-4
 							.input-group
-								input.input-md.form-control(type="text",placeholder="搜索镜像",ng-model="query")
+								input.input-md.form-control(type="text",placeholder="搜索容器",ng-model="containers.page.query")
 								span.input-group-btn
 									input.btn.btn-md.btn-default(type="submit",value="搜索")
 						.pull-right
-							button.btn.btn-default(ng-click="create()",type="button") 创建应用
+							button.btn.btn-default(ng-click="create()",type="button") 创建容器
 				.table-responsive
 					table.table.table-striped.b-t.b-light
 						thead
 							tr
-								//- th(style="width:20px;")
-									label.i-checks.m-b-none
-										input(type="checkbox")
-										i
+								
 								th 名称
 								th 所属镜像
 								th 创建时间
@@ -46,7 +42,7 @@ div(ng-controller="ApplicationsListCtrl")
 								td {{item.created|time}}
 								//- td {{item.updated|time}}
 								td
-									span.label(ng-class="stateClass(item.status.detail)") {{item.status.detail}}
+									span.label(ng-class="item.status|stateClass") {{item.status}}
 								td
 									.btn-group.dropdown(dropdown="")
 										button.btn.btn-default(type="button",ng-click="detail(item.id)",translate="detail") detail
@@ -64,9 +60,9 @@ div(ng-controller="ApplicationsListCtrl")
 							
 						.form-inline
 									span 共
-										strong {{page.count}}
+										strong {{containers.count}}
 										| 个应用,每页显示
-									select.form-control(ng-model="page.page_size",ng-change="loadData()")
+									select.form-control(ng-model="containers.page.page_size",ng-change="loadData(1)")
 										option(value="5") 5
 										option(value="10") 10
 										option(value="15") 15
@@ -75,8 +71,8 @@ div(ng-controller="ApplicationsListCtrl")
 							.input-group
 
 								span.input-group-btn
-									button.btn.btn-default(ng-disabled="!containers.previous",ng-click="loadData(containers.previous)") 上一页
-								select.form-control(ng-model="page.page",ng-change="loadData()")
-									option(ng-repeat="i in getPageArray() track by $index") {{$index+1}}
+									button.btn.btn-default(ng-disabled="!containers.previous",ng-click="loadData(containers.page.page-1)") 上一页
+								select.form-control(ng-model="containers.page.page",ng-change="loadData()")
+									option(ng-repeat="i in containers.array track by $index") {{$index+1}}
 								span.input-group-btn
-									button.btn.btn-default(ng-disabled="!containers.next",ng-click="loadData(containers.next)") 下一页
+									button.btn.btn-default(ng-disabled="!containers.next",ng-click="loadData(containers.page.page+1)") 下一页

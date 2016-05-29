@@ -6,7 +6,7 @@
 	    "SETTINGS": "设置",
 	    "RESET": "修改密码",
 	    "LOGOUT": "登出",
-	    "APPLICATIONS": "应用管理",
+	    "APPLICATIONS": "容器管理",
 	    "REPO": "镜像仓库",
 	    "FILE": "文件管理"
 	  }
@@ -16,7 +16,7 @@
 	"create": "创建实例",
 	"recreate": "重新创建",
 	"stop": "停止运行",
-	"delete": "删除应用",
+	"delete": "删除容器",
 	"pause": "暂停实例",
 	"unpause": "恢复实例",
 	"restart": "重新启动",

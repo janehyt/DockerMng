@@ -1,9 +1,10 @@
 '''models'''
 # -*- coding: UTF-8 -*-
 import json
+import os
+import random
 from django.db import models
 from django.contrib.auth.models import User
-
 class Volume(models.Model):
     '''
     # Volume
@@ -12,9 +13,7 @@ class Volume(models.Model):
     path = models.CharField(max_length=250)
     user = models.ForeignKey(User, on_delete=models.CASCADE, \
             verbose_name="owner", related_name="volumes")
-    readable = models.BooleanField(default=True)
     private = models.BooleanField(default=True)
-    isfile = models.BooleanField(default=False)
 
 
     def __unicode__(self):
@@ -27,7 +26,7 @@ class Repository(models.Model):
     namespace = models.CharField(max_length=150, default=LOCAL)
     user = models.ForeignKey(User, on_delete=models.CASCADE, \
             verbose_name="owner", related_name="repositories")
-    description = models.TextField(default="", blank=True)
+    description = models.TextField(default="", blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -64,7 +63,7 @@ class Image(models.Model):
     status = models.CharField(max_length=2,\
         choices=STATUS_CHOICES, default=PULLING)
     isbuild = models.BooleanField(default=False)
-    builddir = models.CharField(default="", blank=True, max_length=150)
+    builddir = models.CharField(default="", blank=True, null=True, max_length=150)
 
     class Meta:
         '''Meta'''
@@ -78,11 +77,11 @@ class Process(models.Model):
     '''Process'''
     DEFAULT = "000000000000"
     pid = models.CharField(max_length=150, default=DEFAULT)
-    status = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=100, blank=True,null=True,default="")
     image = models.ForeignKey(Image, on_delete=models.CASCADE,\
         related_name="processes", related_query_name="process")
-    detail = models.TextField(blank=True, default="")
-    proc = models.CharField(blank=True, max_length=150)
+    detail = models.TextField(blank=True, null=True, default="")
+    proc = models.CharField(blank=True, null=True, default="",max_length=150)
 
     class Meta:
         '''Meta'''
@@ -103,7 +102,7 @@ class Process(models.Model):
 class Container(models.Model):
     '''Container'''
     name = models.CharField(max_length=150, unique=True)
-    command = models.CharField(max_length=150, default="", blank=True)
+    command = models.CharField(max_length=150, default="", blank=True, null=True)
     restart = models.BooleanField(default=False)
     image = models.ForeignKey(Image, on_delete=models.CASCADE,\
         related_name="containers")
@@ -116,39 +115,77 @@ class Container(models.Model):
     def __unicode__(self):
         return self.name
 
+    def create_ports(self,ports):
+        ports = ports.split(",")
+        for p in ports:
+            if ":" in p:
+                port = Port(port=p[0:len(p)-1],external=True)
+                port.set_expose()
+                self.ports.add(port,bulk=False)
+            else:
+                port = Port(port=p,external=False)
+                self.ports.add(port,bulk=False)
+
+    def create_environments(self,envs):
+        envs = envs.split(",")
+        for e in envs:
+            data = e.split("=")
+            if len(data) is 2:
+                env = Environment(key=data[0],value=data[1])
+                self.environments.add(env,bulk=False)
+    def create_links(self,links):
+        links = links.split(",")
+        for l in links:
+            data = l.split(":")
+            if len(data) is 2:
+                cons = Container.objects.filter(name=data[0])
+                if len(cons) is 1:
+                    link = Link(link=cons[0],alias=data[1])
+                    self.links.add(link,bulk=False)
+
     def display_ports(self):
-        result = ""
+
+        result = {}
         for port in self.ports.all():
-            result += unicode(port)
-            result += ","
-        if result:
-            result = result[0:len(result)-1]
-        return result
-    def display_binds(self):
-        result = ""
-        for bind in self.binds.all():
-            result += unicode(bind)
-            result += ","
-        if result:
-            result = result[0:len(result)-1]
-        return result
-    def display_links(self):
-        result = ""
-        for link in self.links.all():
-            result += unicode(link)
-            result += ","
-        if result:
-            result = result[0:len(result)-1]
+            result[port.port] = {"key":port.port,\
+            "value":port.expose if port.external else port.external}
         return result
 
-    def display_environments(self):
-        result = ""
-        for env in self.environments.all():
-            result += unicode(env)
-            result += ","
-        if result:
-            result = result[0:len(result)-1]
+    def display_binds(self):
+        result = {}
+        for bind in self.binds.all():
+            result[bind.path] = {"key": bind.path, \
+                "value":bind.volume.name if bind.volume.private else bind.volume.path}
         return result
+
+    def display_links(self):
+        result = {}
+        for link in self.links.all():
+            result[link.link.name] = {"key":link.alias,"value":link.link.name,"id":link.link.id}
+        return result
+    def display_environments(self):
+        result = {}
+        for env in self.environments.all():
+            result[env.key] = {"key":env.key,"value":env.value}
+        return result
+    def display_config(self):
+        params = {"links":self.display_links(), "binds":self.display_binds(),\
+            "ports":self.display_ports(), "envs":self.display_environments(),\
+            "image":{},"command":[],\
+            "restart":self.restart}
+        image = self.image.repository.split("/")
+        if len(image) is 2:
+            params["image"]["namespace"] = image[0]
+            params["image"]["name"] = image[1]
+        else:
+            params["image"]["namespace"] = "library"
+            params["image"]["name"] = image[0]
+        params["image"]["tag"] = self.image.tag
+        if self.command:
+            params["command"] = self.command.split(",")
+
+        return params
+
 # 容器连接情况
 class Link(models.Model):
     '''Link'''
@@ -188,14 +225,28 @@ class Port(models.Model):
         related_name="ports")
     port = models.IntegerField()
     external = models.BooleanField(default=False)
-    expose = models.CharField(default=None, blank=None, max_length=5)
+    expose = models.CharField(default="", blank=True, null=True, max_length=5)
 
     class Meta:
         '''Meta'''
         unique_together = (('container', 'port'),)
 
     def __unicode__(self):
-        return str(self.port)+ (":" if self.external else "")
+        return str(self.port)+ (":"+self.expose if self.external else "")
+
+    def set_expose(self):
+        self.expose = self.__generate_port()
+
+    def __generate_port(self):
+        pscmd = "netstat -ntl |grep -v Active| grep -v Proto|awk '{print $4}'|awk -F: '{print $NF}'"
+        procs = os.popen(pscmd).read()
+        procarr = procs.split("\n")
+        tt= random.randint(10000,65534)
+        count = Port.objects.filter(expose=tt).count()
+        if tt not in procarr and count is 0:
+            return tt
+        else:
+            self.generate_port()
 
 class Environment(models.Model):
     '''Environment'''

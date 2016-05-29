@@ -1,10 +1,14 @@
 '''serializers'''
 # -*- coding: UTF-8 -*-
+import os
+import datetime
 from django.contrib.auth.models import User
+from django.db import transaction
 # from rest_framework.authtoken.models import Token
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from .models import Image, Repository, Process, Container,Port
+from .models import Image, Repository, Process, Container, Volume, Bind,Creation
+from .files import VolumeService
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -51,7 +55,7 @@ class RepoSerializer(serializers.ModelSerializer):
     class Meta:#pylint: disable=old-style-class,too-few-public-methods,no-init
         '''Meta'''
         model = Repository
-        fields = ('name', 'namespace', 'description', 'user', 'tag_count', 'created')
+        fields = ('id','name', 'namespace', 'description', 'user', 'tag_count', 'created')
     # url = serializers.HyperlinkedField(lookup_field="name")
     created = serializers.DateTimeField(read_only=True)
     tag_count = serializers.IntegerField(source="tag_num", read_only=True)
@@ -65,11 +69,6 @@ class ProcessSerializer(serializers.ModelSerializer):
         fields = ('pid', 'image', 'status', 'detail', 'proc')
     detail = serializers.DictField(source="get_detail", read_only=True)
 
-# class EnvSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Environment
-#         fields = ('id', 'key', 'value', 'container')
-
 class ContainerSerializer(serializers.ModelSerializer):
     '''ContainerSerializer'''
     class Meta:
@@ -78,15 +77,57 @@ class ContainerSerializer(serializers.ModelSerializer):
             'created','updated', 'ports','binds','envs','links')
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)
-    ports = serializers.CharField(source="display_ports")
-    binds = serializers.CharField(source="display_binds")
-    envs = serializers.CharField(source="display_environments")
-    links = serializers.CharField(source="display_links")
+    ports = serializers.CharField(source="display_ports",allow_blank=True)
+    binds = serializers.CharField(source="display_binds",allow_blank=True)
+    envs = serializers.CharField(source="display_environments",allow_blank=True)
+    links = serializers.CharField(source="display_links",allow_blank=True)
+    # image = serializers.CharField(source = "display_image")
 
     # environments = EnvSerializer
 
     def create(self, validated_data):
         '''create'''
-        print validated_data
-        return Container()
+        # print validated_data
+        # try:
+        with transaction.atomic():
+            container = Container(name=validated_data['name'],\
+                user=validated_data.get('user'),\
+                command=validated_data.get('command'),\
+                restart=validated_data.get('restart'),\
+                image=validated_data.get('image'))
+            container.save()
+            if validated_data['display_ports']:
+                container.create_ports(validated_data['display_ports'])
+            if validated_data['display_environments']:
+                container.create_environments(validated_data['display_environments'])
+            if validated_data['display_links']:
+                container.create_links(validated_data['display_links'])
+            if validated_data['display_binds']:
+                binds = validated_data['display_binds'].split(",")
+                for b in binds:
+                    data = b.split(":")
+                    if len(data) is 2:
+                        if data[0].startswith("/"):
+                            volumes = Volume.objects.filter(path=data[0])
+                            if len(volumes) is 1:
+                                if volumes[0].private is False or volumes[0].user.id is container.user.id:
+                                    bind = Bind(volume=volumes[0], path=data[1])
+                                    container.binds.add(bind, bulk=False)
+                        else:
+                            volumes = Volume.objects.filter(name=data[0], user=container.user)
+                            if len(volumes) is 1:                   
+                                bind = Bind(volume=volumes[0], path=data[1])
+                                container.binds.add(bind, bulk=False)
+                            elif len(volumes) is 0:
+                                files = VolumeService(container.user)
+                                path = os.path.join(files.get_path(), data[0])
+                                volume = Volume(name=data[0], user=container.user, private=True,path=path)
+                                volume.save()
+                                bind = Bind(volume=volume, path=data[1])
+                                container.binds.add(bind, bulk=False)
+            today = datetime.datetime.today()
+            creation = Creation.objects.get_or_create(user = container.user,date=today)[0]
+            creation.count +=1
+            creation.save()
+        return container
 

@@ -30,6 +30,8 @@ class VolumeService(object):
 
             return {"bread":self.__bread, "list":result}
         return None
+    def get_size(self):
+        return self.__get_size(self.__path)
 
     def download(self):
         '''download'''
@@ -105,7 +107,7 @@ class VolumeService(object):
     def __get_size(self, path):
         '''_get_size'''
         size = 0
-        if path in self.__root:
+        if self.__root in path:
             if os.path.isdir(path):
                 for root, dirs, files in os.walk(path, True):#pylint: disable=unused-variable
                     size += sum([os.path.getsize(os.path.join(root, name)) for name in files])

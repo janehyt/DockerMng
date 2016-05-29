@@ -45,7 +45,7 @@ app.service('Image',['$http','BASE_URL','$q',
 
 						deferred.resolve(response.data);
 					},function(x){
-						deferred.reject(x.data);
+						deferred.reject(x);
 					})
 				return deferred.promise;
 			}
@@ -58,7 +58,7 @@ app.service('Image',['$http','BASE_URL','$q',
 
 						deferred.resolve(response.data);
 					},function(x){
-						deferred.reject(x.data);
+						deferred.reject(x);
 					})
 				return deferred.promise;
 			}
@@ -70,19 +70,19 @@ app.service('Image',['$http','BASE_URL','$q',
 					function(response){
 						deferred.resolve(response.data);
 					},function(x){
-						deferred.reject(x.data);
+						deferred.reject(x);
 					})
 				return deferred.promise;
 			}
 
-			this.remove=function(id){
+			this.delete=function(id){
 				
 				var deferred = $q.defer();
 				$http.delete(_url+id+"/").then(
 					function(response){
 						deferred.resolve(response.data);
 					},function(x){
-						deferred.reject(x.data);
+						deferred.reject(x);
 					})
 				return deferred.promise;
 			}
@@ -92,7 +92,7 @@ app.service('Image',['$http','BASE_URL','$q',
 					function(response){
 						deferred.resolve(response.data);
 					},function(x){
-						deferred.reject(x.data);
+						deferred.reject(x);
 					})
 				return deferred.promise;
 			}
@@ -136,6 +136,17 @@ app.service('Image',['$http','BASE_URL','$q',
 						deferred.resolve();
 					},function(x){
 						deferred.reject();
+					})
+				return deferred.promise;
+			}
+			this.delete=function(id){
+				var deferred = $q.defer();
+				$http.delete(_url+id+"/").then(
+					function(response){
+						_detail=response.data;
+						deferred.resolve(_detail);
+					},function(x){
+						deferred.reject(x);
 					})
 				return deferred.promise;
 			}

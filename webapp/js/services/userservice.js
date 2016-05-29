@@ -46,6 +46,19 @@ app
 		        return deferred.promise;
 			}
 
+			this.overview = function(){
+				var deferred = $q.defer();
+				$http.get(base_url+"api/users/overview/")
+		            .then(function(response){
+		              console.info(response);		              
+		              deferred.resolve(response.data);
+		            },function(x){
+		              deferred.reject(x);
+		            })
+				
+				return deferred.promise;
+			}
+
 			this.resetPassword=function(data){
 				var deferred = $q.defer();
 				$http.post(base_url+"api/users/reset/",data).then(
@@ -67,7 +80,6 @@ app
 				return __user;
 			}
 			this.loadUser =function(){
-				var deferred = $q.defer();
 				
 				var deferred = $q.defer();
 				$http.get(base_url+"api/users/load_user/")
@@ -75,7 +87,7 @@ app
 		              __user=response.data;
 		              deferred.resolve();
 		            },function(x){
-		              deferred.reject();
+		              deferred.reject(x);
 		            })
 				
 				return deferred.promise;

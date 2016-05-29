@@ -82,7 +82,7 @@ angular.module('app')
 			return "label-success"
 		else if(status=="exited")
 			return "label-danger"
-		else if(status=="paused"||status=="pulling image")
+		else if(status=="paused"||status=="pulling"||status=="building")
 			return "label-warning"
 		else
 			return "label-default"

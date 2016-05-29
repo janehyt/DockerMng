@@ -1,5 +1,6 @@
-app.controller('RepoListCtrl',['$scope','$state','Image','Repo','filterOfficialFilter',
-	function($scope,$state,Image,Repo,filterOfficialFilter){
+app.controller('RepoListCtrl',['$scope','$state','Image','Repo',
+	'filterOfficialFilter','toaster','$modal','$timeout',
+	function($scope,$state,Image,Repo,filterOfficialFilter,toaster,$modal,$timeout){
 	
 
 	$scope.loadImages=function(page){
@@ -45,22 +46,91 @@ app.controller('RepoListCtrl',['$scope','$state','Image','Repo','filterOfficialF
 
 
 	$scope.detail=function(name,namespace){
-			$state.go('app.repo',{name:name,namespace:namespace});
+		$state.go('app.repo',{name:name,namespace:namespace});
+	}
+	$scope.repoDetail=function(repo){
+		if(repo.indexOf("/")==-1){
+			$state.go('app.repo',{name:repo,namespace:"library"});
+		}else{
+			repo = repo.split("/")
+			$state.go('app.repo',{name:repo[1],namespace:repo[0]});
+		}
+		
 	}
 
 	$scope.publish=function(item){
 		$state.go('app.publish',{id:item.id})
 	}
+
+	$scope.deleteRepo = function(item){
+		var modalIns = $modal.open({
+			templateUrl: 'app/views/template/delete.html',
+			controller: 'ModalDelCtrl',
+			resolve:{
+				name:function(){
+				return item.namespace+"/"+item.name;
+			  }
+			}
+		});
+		modalIns.result.then(function(){
+			Repo.delete(item.id).then(function(data){
+				$scope.loadRepos()
+				toaster.pop("success","删除"+item.namespace+"/"+item.name+"成功");
+			},function(x){
+				toaster.pop("error",x.data);
+			});
+		},function(){
+			console.info("dismiss");
+		})
+		
+	}
+
+	$scope.deleteImage = function(item){
+		var modalIns = $modal.open({
+			templateUrl: 'app/views/template/delete.html',
+			controller: 'ModalDelCtrl',
+			resolve:{
+				name:function(){
+				return item.repository+":"+item.tag;
+			  }
+			}
+		});
+		modalIns.result.then(function(){
+			Image.delete(item.id).then(function(data){
+				// console.info(data);
+				$scope.loadImages();
+				toaster.pop("success","删除"+item.repository+":"+item.tag+"成功");
+			},function(x){
+				toaster.pop("error",x.data);
+			});
+		},function(){
+			console.info("dismiss");
+		})
+		
+	}
+
 	$scope.pull=function(name,namespace,tag){
 		var repository = filterOfficialFilter(namespace)+name;
-		// console.info(repository);
 		Image.pull({repository:repository,tag:tag}).then(
 			function(data){
 				console.info(data);
+				$scope.loadImages();
 			},function(x){
 				console.info(x);
 			})
 	}
+	// $scope.repull = function(item){
+	// 	Image.pull({repository:item.repository,tag:item.tag}).then(
+	// 		function(data){
+	// 			console.info(data);
+	// 			$scope.loadImages();
+	// 		},function(x){
+	// 			console.info(x);
+	// 		})
+	// 	$timeout(function(){
+	// 		$scope.loadImages();
+	// 	},1000);
+	// }
 	$scope.init = function(){
 		$scope.title="镜像仓库";
 		$scope.repos={page:{namespace:'local'}};
@@ -123,7 +193,7 @@ app.controller('RepoDetailCtrl',['$scope','$state','$sce',
 	}
 	$scope.pull=function(data){
 		var repository = $scope.name;
-		toaster.pop("warning","已开始拉取，可在已有镜像中查看状态。")
+		toaster.pop("warning","已开始拉取...")
 		// console.info(repository);
 		Image.pull({repository:repository,tag:data}).then(
 			function(response){
@@ -140,11 +210,11 @@ app.controller('RepoDetailCtrl',['$scope','$state','$sce',
 		
 	}
 	$scope.publish = function(data){
-		
+		$state.go('app.publish',{id:data.id})
 	}
 	$scope.create=function(tag){
 		var repository = $scope.name;
-		toaster.pop("warning","已开始构建，可在已有镜像中查看状态。")
+		toaster.pop("warning","已开始构建...")
 		Image.build({repository:repository,tag:tag,builddir:$scope.path}).then(
 			function(response){
 				console.info(response,$state.current);
@@ -179,12 +249,12 @@ app.controller('RepoDetailCtrl',['$scope','$state','$sce',
 			}
 		});
 		modalIns.result.then(function(){
-			Image.remove(item.id).then(function(){
+			Image.delete(item.id).then(function(){
 				toaster.pop("success","已成功移除所选版本");
 				$scope.loadTags();
 			},function(x){
 				console.info(x);
-				toaster.pop("error",x);
+				toaster.pop("error",x.data);
 			})
 		},function(){
 			console.info("dismiss");

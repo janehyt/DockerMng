@@ -28,7 +28,7 @@ angular.module('app')
  }).filter('time',function(){
  	return function(data){
  		if(!data){
- 			return ""
+ 			return "未知"
  		}
  		var date = new Date(data);
  		var now = new Date();

@@ -145,6 +145,8 @@ class ContainerHelper(object):
             "config":self.__container.display_config(),"created":self.__container.created}
         try:
             data["inspect"] = self.__cli.inspect_container(self.__container.name)
+            if data["inspect"]["State"]["FinishedAt"] == "0001-01-01T00:00:00Z":
+                data["inspect"]["State"]["FinishedAt"] = None
             data["status"] = data["inspect"]["State"]["Status"]
         except errors.APIError, errormsg:
             if errormsg.response.status_code == 404:

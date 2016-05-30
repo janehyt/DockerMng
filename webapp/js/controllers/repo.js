@@ -230,6 +230,7 @@ app.controller('RepoDetailCtrl',['$scope','$state','$sce',
 	}
 	$scope.rebuild=function(id){
 		console.info(response,$state.current);
+		toaster.pop("warning","已开始重新构建...")
 		Image.rebuild(id).then(
 			function(response){
 				console.info(response);

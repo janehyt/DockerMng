@@ -1,5 +1,5 @@
-'''views'''
 # -*- coding: UTF-8 -*-
+'''views'''
 # import json
 # from collections import OrderedDict
 import markdown

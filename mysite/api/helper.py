@@ -1,5 +1,5 @@
-'''helper'''
 # -*- coding: UTF-8 -*-
+'''helper'''
 import json
 import calendar
 import datetime
@@ -54,7 +54,7 @@ class ImageHelper(object):
             build_image = self.__cli.build(path=self.__image.builddir,\
                 tag=unicode(self.__image), rm=True, stream=True)
             for line in build_image:
-                print "build"
+                # print "build"
                 status = self.__build_process(line)
                 print status
             if "Successfully built" in status:
@@ -92,7 +92,7 @@ class ImageHelper(object):
         status = prtmp.get("status", "")
         p_id = prtmp.get("id", Process.DEFAULT)
         # if "Pulling from" not in status:
-        print prtmp
+        # print prtmp
         process = self.__image.processes.get_or_create(
             pid=p_id)[0]
         process.status = status
@@ -106,7 +106,7 @@ class ImageHelper(object):
         process = self.__image.processes.get_or_create(
             pid=Process.DEFAULT)[0]
         detail = prtmp.get("stream","")
-        process.detail = detail
+        process.detail = json.dumps(detail)
         process.save()
         return detail
 

@@ -1,5 +1,5 @@
-'''models'''
 # -*- coding: UTF-8 -*-
+'''models'''
 import json
 import os
 import random

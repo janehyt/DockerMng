@@ -1,5 +1,5 @@
-'''admin'''
 # -*- coding: UTF-8 -*-
+'''admin'''
 from django.contrib import admin
 from .models import Volume, Repository, Image, Process,\
 Container, Link, Bind, Port, Environment, Creation

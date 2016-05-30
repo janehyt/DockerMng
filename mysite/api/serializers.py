@@ -1,5 +1,5 @@
-'''serializers'''
 # -*- coding: UTF-8 -*-
+'''serializers'''
 import os
 import datetime
 from django.contrib.auth.models import User
